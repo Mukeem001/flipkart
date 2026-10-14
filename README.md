@@ -389,6 +389,34 @@ VITE_API_URL=http://localhost:5000
 
 </details>
 
+### Hostinger Static Hosting
+
+The production builds use the Render API URL configured in `client/.env.production` and `admin/.env.production`. Build each app and upload the **contents** of its `dist/` folder to its Hostinger document root:
+
+```bash
+npm --prefix client run build
+npm --prefix admin run build
+```
+
+Each `dist/` contains an `.htaccess` file so React Router pages continue to work when opened or refreshed directly.
+
+In the Render backend environment, set these exact origins (no trailing slash):
+
+```env
+CLIENT_URL=https://flipkart.newbrainquiz.online
+ADMIN_URL=https://flipkart-admin.newbrainquiz.online
+```
+
+The backend only allows these configured origins in production.
+
+The API URL is configured, but the Render service must be live and its Hostinger origins must be allowlisted before browser requests can connect successfully.
+
+### Render Backend
+
+The Render service must use the `server` directory as its Root Directory, `npm ci --legacy-peer-deps` as its Build Command, and `npm start` as its Start Command. Do not use `npm start` as the Build Command: it starts the long-running API server, so Render cannot finish the build step. The root-level `render.yaml` records these settings for Render Blueprint deployments.
+
+For an existing Render service not managed by a Blueprint, update those three fields in **Settings** and deploy again. Keep the existing database and secret environment variables configured in Render; the `PORT` value is supplied by Render.
+
 ### 3. Install & Run
 
 ```bash

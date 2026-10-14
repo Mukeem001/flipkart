@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: flipkart-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci --legacy-peer-deps
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://flipkart.newbrainquiz.online
+      - key: ADMIN_URL
+        value: https://flipkart-admin.newbrainquiz.online
