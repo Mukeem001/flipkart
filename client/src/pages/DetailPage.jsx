@@ -87,6 +87,7 @@ const DetailPage = () => {
         });
     }
     const productCost = product.price?.cost ?? 0
+    const monthlyEmiAmount = Math.ceil(productCost / 3)
     const productMrp = product.price?.mrp ?? productCost
     const discountText = product.price?.discount || '0% off'
     const svgIconBase = '/detailpage-icon'
@@ -430,30 +431,29 @@ const DetailPage = () => {
                         </section>
                     </div>
 
-                    <div className="mobile-buy-footer">
-                        <button className="footer-cart-button" type="button" aria-label="Add to cart" onClick={() => addItToCart(product, product.quantity || 1)}>
-                            <img src={`${svgIconBase}/cartplus-icon.svg`} alt="" />
-                        </button>
+                    <div className={`mobile-buy-footer ${product.emiAvailable ? 'with-emi' : 'without-emi'}`}>
+                        {product.emiAvailable && (
+                            <button className="footer-cart-button" type="button" aria-label="Add to cart" onClick={() => addItToCart(product, product.quantity || 1)}>
+                                <img src={`${svgIconBase}/cartplus-icon.svg`} alt="" />
+                            </button>
+                        )}
                         <div className="detail-buy-row">
                             {product?.emiAvailable ? (
-                                <button className="emi-option" type="button">
+                                <button className="emi-option" type="button" onClick={() => setShowVariantSheet(true)}>
                                     <span className="emi-copy">
                                         <strong>Buy with EMI</strong>
-                                        <small>From ₹666/m</small>
+                                        <small>From ₹{monthlyEmiAmount.toLocaleString('en-IN')}/m</small>
                                     </span>
                                 </button>
                             ) : (
-                                <button className="emi-option" type="button" onClick={() => setShowVariantSheet(true)}>
-                                    <span className="emi-copy">
-                                        <strong>Buy at</strong>
-                                        <small>₹{productCost.toLocaleString('en-IN')}</small>
-                                    </span>
+                                <button className="add-to-cart-option" type="button" onClick={() => addItToCart(product, product.quantity || 1)}>
+                                    Add to cart
                                 </button>
                             )}
 
                             <button className="buy-now-option" type="button" onClick={() => setShowVariantSheet(true)}>
-                                <span>{product?.emiAvailable ? 'Buy now' : 'Buy now'}</span>
-                                <small>{product?.emiAvailable ? `at ₹${productCost.toLocaleString('en-IN')}` : `₹${productCost.toLocaleString('en-IN')}`}</small>
+                                <span>Buy now</span>
+                                <small>at ₹{productCost.toLocaleString('en-IN')}</small>
                             </button>
                         </div>
                     </div>

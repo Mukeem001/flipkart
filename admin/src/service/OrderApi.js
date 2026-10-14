@@ -1,6 +1,8 @@
 import axios from "axios"
 
-const URL = import.meta.env.VITE_API_URL;
+const URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV
+    ? `${window.location.protocol}//${window.location.hostname}:5000`
+    : "");
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem("adminToken") || localStorage.getItem("token")
@@ -22,11 +24,9 @@ export const OrderList = async (queryString) => {
 
 //To Add Product
 export const AddProduct = async (formData) => {
-    const token = localStorage.getItem("token");
     const res = await axios.post(`${URL}/addproduct`, formData, {
         headers: {
-            "Content-Type": "multipart/form-data",
-            ...(token && { "Authorization": `Bearer ${token}` })
+            ...getAuthHeaders()
         }
     })
     return res.data;

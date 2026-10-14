@@ -17,7 +17,7 @@ router.get("/product/:id", product)
 router.delete("/deleteproduct/:id", DeleteProduct)
 
 //Add Product
-router.post("/addproduct",upload.single("image"), AddProduct)
+router.post("/addproduct", adminAuth, upload.single("image"), AddProduct)
 
 //Add Product Review
 router.post("/review/:id",auth, ProdcutReview)

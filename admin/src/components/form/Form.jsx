@@ -230,7 +230,7 @@ const Form = () => {
 
         <div className="form-row full">
           <label>Description</label>
-          <textarea name="description" value={formData.description} onChange={handleChange}></textarea>
+          <textarea name="description" value={formData.description} onChange={handleChange} required></textarea>
         </div>
 
         <div className="form-actions">
