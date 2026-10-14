@@ -11,6 +11,7 @@ const Form = () => {
     cost: "",
     discount: "",
     quantity: 1,
+    emiAvailable: true,
     description: "",
     imageUrl: "",
   });
@@ -76,6 +77,7 @@ const Form = () => {
     data.append("cost", formData.cost);
     data.append("discount", formData.discount);
     data.append("quantity", formData.quantity);
+    data.append("emiAvailable", String(formData.emiAvailable));
     data.append("description", formData.description);
 
     AddProduct(data).then(() => {
@@ -89,6 +91,7 @@ const Form = () => {
           cost: "",
           discount: "",
           quantity: 1,
+          emiAvailable: true,
           description: "",
           imageUrl: "",
         });
@@ -198,6 +201,30 @@ const Form = () => {
           <div>
             <label>Quantity</label>
             <input type="number" min="0" value={formData.quantity} name="quantity" onChange={handleChange} required />
+          </div>
+        </div>
+
+        <div className="form-row full">
+          <label>EMI availability</label>
+          <div className="flex gap-3 pt-2">
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
+                name="emiAvailable"
+                checked={formData.emiAvailable === true}
+                onChange={() => setFormData((current) => ({ ...current, emiAvailable: true }))}
+              />
+              Available
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
+                name="emiAvailable"
+                checked={formData.emiAvailable === false}
+                onChange={() => setFormData((current) => ({ ...current, emiAvailable: false }))}
+              />
+              Not available
+            </label>
           </div>
         </div>
 

@@ -90,7 +90,7 @@ module.exports.product = wrapAsync(async (req, res) => {
 
 // Add product
 module.exports.AddProduct = wrapAsync(async (req, res) => {
-    const { quantity, category, description, longtitle, shorttitle, mrp, cost, discount } = req.body
+    const { quantity, category, description, longtitle, shorttitle, mrp, cost, discount, emiAvailable } = req.body
     const detailUrl = req.file?.path || req.body.imageUrl?.trim();
     const publicId = req.file?.filename;
 
@@ -114,6 +114,7 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
             discount,
         },
         quantity,
+        emiAvailable: emiAvailable === "true" || emiAvailable === true,
         category,
         description
     })

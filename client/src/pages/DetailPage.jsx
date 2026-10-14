@@ -435,16 +435,25 @@ const DetailPage = () => {
                             <img src={`${svgIconBase}/cartplus-icon.svg`} alt="" />
                         </button>
                         <div className="detail-buy-row">
-                            <button className="emi-option" type="button">
-                                <span className="emi-copy">
-                                    <strong>Buy with EMI</strong>
-                                    <small>From ₹666/m</small>
-                                </span>
-                            </button>
+                            {product?.emiAvailable ? (
+                                <button className="emi-option" type="button">
+                                    <span className="emi-copy">
+                                        <strong>Buy with EMI</strong>
+                                        <small>From ₹666/m</small>
+                                    </span>
+                                </button>
+                            ) : (
+                                <button className="emi-option" type="button" onClick={() => setShowVariantSheet(true)}>
+                                    <span className="emi-copy">
+                                        <strong>Buy at</strong>
+                                        <small>₹{productCost.toLocaleString('en-IN')}</small>
+                                    </span>
+                                </button>
+                            )}
 
                             <button className="buy-now-option" type="button" onClick={() => setShowVariantSheet(true)}>
-                                <span>Buy now</span>
-                                <small>at ₹{productCost.toLocaleString('en-IN')}</small>
+                                <span>{product?.emiAvailable ? 'Buy now' : 'Buy now'}</span>
+                                <small>{product?.emiAvailable ? `at ₹${productCost.toLocaleString('en-IN')}` : `₹${productCost.toLocaleString('en-IN')}`}</small>
                             </button>
                         </div>
                     </div>
