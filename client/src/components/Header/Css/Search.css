@@ -1,0 +1,218 @@
+.searchbar {
+  position: relative;
+  background-color: rgb(227, 246, 251);
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.5rem;
+  width: 40%;
+}
+
+.searchbar-search {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.searchbar-search .search-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgb(132, 131, 131);
+  cursor: pointer;
+}
+
+.searchbar-search .search-icon i {
+  color: inherit;
+}
+
+.searchbar .searchbar-search input {
+  width: 100%;
+  border: none;
+  background-color: rgb(227, 246, 251);
+  border-radius: 0.5rem;
+  outline: none;
+  height: 1.5rem;
+}
+
+.searchbar-list {
+  position: absolute;
+  margin-top: 0.2rem;
+  background-color: rgb(255, 255, 255);
+  z-index: 999;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+  left: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.searchbar-list ul {
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.searchbar-list li {
+  flex-direction: column;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  padding: 0.4rem 0.5rem 0.4rem 0.5rem;
+  width: 100%;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.24);
+}
+
+.search-link {
+  text-decoration: none;
+  color: black;
+}
+
+.searchbar-list li:hover {
+  background-color: rgb(237, 236, 236);
+  cursor: pointer;
+}
+
+.search-all-link {
+  color: #145de0;
+  font-weight: 600;
+}
+
+.searchbar--compact {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid #329bff;
+  border-radius: 24px;
+  background: #fff;
+}
+
+.searchbar--compact .searchbar-search {
+  min-height: 42px;
+  gap: 10px;
+}
+
+.searchbar--compact .searchbar-search input {
+  height: 40px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.searchbar--compact .searchbar-search .search-icon {
+  display: grid;
+  color: #145de0;
+}
+
+.searchbar--compact .searchbar-list {
+  top: calc(100% + 4px);
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20, 40, 70, 0.14);
+}
+
+/* -----------Responsive----------- */
+@media (max-width: 850px) {
+  .searchbar {
+    width: 40%;
+  }
+  .searchbar-search input {
+    font-size: 0.8rem;
+  }
+  .searchbar-search > :nth-child(1) {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .searchbar {
+    width: 60%;
+    padding: 0.5rem 0.8rem;
+  }
+  .searchbar--compact {
+    width: auto;
+    padding: 0 10px;
+  }
+  .searchbar-list li {
+    font-size: 0.7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 1.7rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .searchbar {
+    padding: 0.3rem 0.8rem;
+    border-radius: 0.5rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .mobile-sticky-search .searchbar {
+    width: 100%;
+    min-height: 54px;
+    padding: 0 16px;
+    border: 2px solid #58a6ff;
+    border-radius: 20px;
+    background: #fff;
+  }
+
+  .mobile-sticky-search .searchbar-search {
+    min-height: 50px;
+    gap: 12px;
+  }
+
+  .mobile-sticky-search .searchbar-search > :first-child {
+    display: block;
+    color: #145de0;
+    font-size: 20px;
+  }
+
+  .mobile-sticky-search .searchbar-search input {
+    height: 46px;
+    background: #fff;
+    font-size: 15px;
+  }
+
+  .mobile-sticky-search .searchbar-search input::placeholder {
+    color: #292929;
+    opacity: 1;
+  }
+
+  .mobile-sticky-search .searchbar-list {
+    top: calc(100% - 4px);
+    border: 1px solid #d8d8d8;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .mobile-sticky-search .searchbar-list:empty {
+    display: none;
+  }
+}
+
+@media (min-width: 500px) and (max-width: 800px) {
+  .mobile-sticky-search .searchbar {
+    min-height: 60px;
+    padding: 0 18px;
+    border-radius: 18px;
+  }
+
+  .mobile-sticky-search .searchbar-search {
+    min-height: 56px;
+    gap: 14px;
+  }
+
+  .mobile-sticky-search .searchbar-search > :first-child {
+    font-size: 24px;
+  }
+
+  .mobile-sticky-search .searchbar-search input {
+    height: 50px;
+    font-size: 18px;
+  }
+}

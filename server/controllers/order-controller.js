@@ -1,0 +1,246 @@
+const Order = require("../models/order")
+const User = require("../models/user")
+const PaymentSettings = require("../models/paymentSettings")
+const wrapAsync = require("../utils/wrapAsync")
+const UPI_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{0,99}@[a-z0-9][a-z0-9.-]{0,29}$/i
+
+const finalizeExpiredUpiRequests = async (filter = {}) => {
+    const now = new Date()
+    await Order.updateMany({
+        ...filter,
+        status: "PAYMENT_REQUESTED",
+        "upiPaymentRequest.status": "ACTIVE",
+        "upiPaymentRequest.expiresAt": { $lte: now }
+    }, {
+        $set: {
+            status: "PLACED",
+            "upiPaymentRequest.status": "AWAITING_REVIEW",
+            "upiPaymentRequest.placedAt": now
+        }
+    })
+}
+
+//Place New Order
+module.exports.order = wrapAsync(async (req, res) => {
+    const { cartItems, totalPrice } = req.body
+    const userId = req.user._id;
+    const user = await User.findById(userId)
+    if (!user) {
+        return res.json({ message: "user not found" })
+    }
+    const formattedItems = cartItems.map(item => ({
+        productName: item.title.shortTitle,
+        productImg: item.detailUrl,
+        productId: item._id,
+        quantity: item.quantity,
+        price: item.price.cost,
+    }))
+
+    const userDetail = {
+        name: user.name,
+        email: user.email,
+        mobile: user.phone
+    }
+
+    const order = new Order({
+        userId: userId,
+        user: userDetail,
+        items: formattedItems,
+        totalPrice: totalPrice
+    })
+
+    const savedOrder = await order.save();
+
+    res.status(200).json({ success: true, message: "order created successfully", orderId: savedOrder._id })
+})
+
+
+// Get all orders
+module.exports.Allorders = wrapAsync(async (req, res) => {
+    await finalizeExpiredUpiRequests()
+    const { page, limit, search } = req.query;
+    const currentPage = Number(page);
+    const pageLimit = Number(limit);
+
+    const skip = (currentPage - 1) * pageLimit;
+
+    let filter = {};
+    if (typeof search === "string" && search.trim()) {
+        const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const searchRegex = new RegExp(escapedSearch, "i");
+        filter = {
+            $or: [
+                { "user.name": searchRegex },
+                { "user.email": searchRegex },
+                { status: searchRegex }
+            ]
+        };
+        if (/^[a-f\d]{24}$/i.test(search.trim())) filter.$or.push({ _id: search.trim() });
+    }
+
+    let query = Order.find(filter).sort({ createdAt: -1 });
+
+    query = query.skip(skip).limit(pageLimit);
+    const allOrders = await query;
+
+    const totalOrders = await Order.countDocuments(filter);
+
+    res.status(200).json({
+        message: "Orders Are Fetched",
+        allOrders,
+        page,
+        totalPages: Math.ceil(totalOrders / pageLimit),
+        totalOrders
+    })
+})
+
+// Get customer Orders
+module.exports.CustomerOrders = wrapAsync(async (req, res) => {
+    const id = req.user._id;
+    await finalizeExpiredUpiRequests({ userId: id })
+    const orders = await Order.find({ userId: id })
+    res.status(200).json({ success: true, orders })
+})
+
+// Single Order
+module.exports.SingleOrder = wrapAsync(async (req, res) => {
+    const { id } = req.params
+    await finalizeExpiredUpiRequests({ _id: id, userId: req.user._id })
+    const order = await Order.findOne({ _id: id, userId: req.user._id })
+    if (!order) {
+        return res.status(404).json({ success: false, message: "order not found" })
+    }
+    res.status(200).json({ success: true, order })
+})
+
+module.exports.startUpiPaymentRequest = wrapAsync(async (req, res) => {
+    const { id } = req.params
+    const { optionId, customUpiId } = req.body || {}
+    const order = await Order.findOne({ _id: id, userId: req.user._id })
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found." })
+    }
+    if (order.paymentDetails?.status === "PAID") {
+        return res.status(409).json({ success: false, message: "This order is already paid." })
+    }
+
+    const existingRequest = order.upiPaymentRequest
+    if (existingRequest?.status === "ACTIVE") {
+        if (existingRequest.expiresAt > new Date()) {
+            return res.status(200).json({ success: true, paymentRequest: existingRequest })
+        }
+        await finalizeExpiredUpiRequests({ _id: order._id, userId: req.user._id })
+        return res.status(409).json({ success: false, message: "The payment timer ended. Your order is placed and waiting for store verification." })
+    }
+    if (existingRequest?.status === "AWAITING_REVIEW") {
+        return res.status(409).json({ success: false, message: "Payment request is already with the store for review." })
+    }
+
+    let selectedOption
+    if (optionId) {
+        const settings = await PaymentSettings.findOne({ key: "upi" })
+        selectedOption = settings?.upiOptions.id(optionId)
+        if (!selectedOption || !selectedOption.enabled) {
+            return res.status(400).json({ success: false, message: "Choose an enabled UPI app." })
+        }
+    } else if (typeof customUpiId === "string" && UPI_ID_PATTERN.test(customUpiId.trim())) {
+        selectedOption = { provider: "custom", label: "UPI app", upiId: customUpiId.trim().toLowerCase() }
+    } else {
+        return res.status(400).json({ success: false, message: "Choose a UPI app or enter a valid UPI ID." })
+    }
+
+    const requestedAt = new Date()
+    const paymentRequest = {
+        provider: selectedOption.provider,
+        label: selectedOption.label,
+        upiId: selectedOption.upiId,
+        status: "ACTIVE",
+        requestedAt,
+        expiresAt: new Date(requestedAt.getTime() + 5 * 60 * 1000),
+        placedAt: null
+    }
+
+    order.upiPaymentRequest = paymentRequest
+    order.paymentDetails.method = "UPI"
+    order.paymentDetails.status = "PENDING"
+    order.status = "PAYMENT_REQUESTED"
+    await order.save()
+
+    return res.status(201).json({ success: true, paymentRequest })
+})
+
+module.exports.expireUpiPaymentRequest = wrapAsync(async (req, res) => {
+    const order = await Order.findOne({ _id: req.params.id, userId: req.user._id })
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found." })
+    }
+
+    const paymentRequest = order.upiPaymentRequest
+    if (!paymentRequest?.expiresAt) {
+        return res.status(400).json({ success: false, message: "No UPI payment request exists for this order." })
+    }
+    if (paymentRequest.status === "ACTIVE" && paymentRequest.expiresAt > new Date()) {
+        return res.status(409).json({ success: false, message: "The payment timer has not finished yet.", expiresAt: paymentRequest.expiresAt })
+    }
+
+    if (paymentRequest.status === "ACTIVE") {
+        paymentRequest.status = "AWAITING_REVIEW"
+        paymentRequest.placedAt = new Date()
+        if (!["DELIVERED", "REJECTED", "PAYMENT_FAILED"].includes(order.status)) order.status = "PLACED"
+        await order.save()
+    }
+
+    return res.status(200).json({
+        success: true,
+        orderId: order._id,
+        orderStatus: order.status,
+        paymentStatus: order.paymentDetails.status,
+        paymentRequestStatus: paymentRequest.status
+    })
+})
+
+// Update Order Status
+module.exports.updateOrderStatus = wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = ["DELIVERED", "REJECTED"];
+    if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status value" });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+        id,
+        { status },
+        { new: true }
+    );
+
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Order status updated", order });
+})
+
+module.exports.updatePaymentStatus = wrapAsync(async (req, res) => {
+    const { status } = req.body || {}
+    if (!["PAID", "FAILED"].includes(status)) {
+        return res.status(400).json({ success: false, message: "Payment status must be PAID or FAILED." })
+    }
+
+    const order = await Order.findById(req.params.id)
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found." })
+    }
+    if (!order.upiPaymentRequest?.requestedAt) {
+        return res.status(400).json({ success: false, message: "This order has no UPI payment request." })
+    }
+
+    order.paymentDetails.status = status
+    order.upiPaymentRequest.status = status === "PAID" ? "CONFIRMED" : "FAILED"
+    if (status === "FAILED") order.status = "PAYMENT_FAILED"
+    else if (order.status !== "DELIVERED") order.status = "PLACED"
+    await order.save()
+
+    return res.status(200).json({ success: true, message: "Payment status updated.", order })
+})

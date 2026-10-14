@@ -1,0 +1,67 @@
+import MainPage from './pages/MainPage'
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import DetailPage from './pages/DetailPage'
+import Cart from './pages/Cart'
+import OrderSuccess from './pages/OrderSuccess'
+import Categories from './pages/Categories'
+import LoginSignup from './components/LoginSignup/LoginSignup'
+import { useDataContextProvider } from './context/DataProvider'
+import MyOrders from './pages/MyOrders'
+import OrderDetail from './pages/OrderDetail'
+import ProductReview from './pages/ProductReview'
+import AllReviews from './pages/AllReviews'
+import SearchResults from './pages/SearchResults'
+import OrderSummary from './pages/OrderSummary'
+import Payment from './pages/Payment'
+import Header from './components/Header/Header'
+import { useDispatch, useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { fetchMe } from './redux/features/UserSlice'
+import { Toaster } from "react-hot-toast"
+
+const App = () => {
+
+  const dispatch = useDispatch()
+  const { loginform } = useDataContextProvider();
+  const { loading } = useSelector(state => state.user)
+
+  useEffect(() => {
+    dispatch(fetchMe())
+  }, [dispatch])
+
+  return (
+    <>
+      <BrowserRouter>
+
+        {loading && <></>}
+        {loginform && <LoginSignup />}
+
+        <Toaster
+          position='bottom-right'
+          reverseOrder={false}
+          toastOptions={{
+            duration: 3000
+          }}
+        />
+        
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/product/:id" element={<DetailPage />} />
+          <Route path="/product/:id/reviews" element={<AllReviews />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/checkout/:id/summary" element={<OrderSummary />} />
+          <Route path="/checkout/:id/payment" element={<Payment />} />
+          <Route path="/account" element={<Header />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/order/:id" element={<OrderDetail />} />
+          <Route path="/product/review/:id" element={<ProductReview />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  )
+}
+
+export default App
