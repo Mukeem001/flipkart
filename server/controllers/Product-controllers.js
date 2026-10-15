@@ -90,7 +90,7 @@ module.exports.product = wrapAsync(async (req, res) => {
 
 // Add product
 module.exports.AddProduct = wrapAsync(async (req, res) => {
-    const { quantity, category, description, longtitle, shorttitle, mrp, cost, discount, emiAvailable } = req.body
+    const { quantity, category, description, longtitle, shorttitle, mrp, cost, discount, emiAvailable, variantType } = req.body
     const detailUrl = req.file?.path || req.body.imageUrl?.trim();
     const publicId = req.file?.filename;
 
@@ -98,6 +98,38 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
         return res.status(400).json({
             success: false,
             message: "Upload an image or provide an image URL"
+        })
+    }
+
+    const parseVariantList = value => {
+        if (typeof value === "undefined" || value === "") return []
+        let parsedValue = value
+        if (typeof value === "string") {
+            try {
+                parsedValue = JSON.parse(value)
+            } catch {
+                return null
+            }
+        }
+        if (!Array.isArray(parsedValue) || parsedValue.some(item => typeof item !== "string" || !item.trim() || item.length > 40)) {
+            return null
+        }
+        return [...new Set(parsedValue.map(item => item.trim()))]
+    }
+
+    const colors = parseVariantList(req.body.colors, "colors")
+    const sizes = parseVariantList(req.body.sizes, "sizes")
+    if (!colors || !sizes) {
+        return res.status(400).json({
+            success: false,
+            message: "Product colors and sizes must be valid lists of text values."
+        })
+    }
+    const validVariantTypes = ["", "clothing", "footwear", "accessories"]
+    if (typeof variantType === "string" && !validVariantTypes.includes(variantType)) {
+        return res.status(400).json({
+            success: false,
+            message: "Product variant type must be clothing, footwear, or accessories."
         })
     }
 
@@ -116,6 +148,9 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
         quantity,
         emiAvailable: emiAvailable === "true" || emiAvailable === true,
         category,
+        variantType: variantType || "",
+        colors,
+        sizes,
         description
     })
     await product.save()

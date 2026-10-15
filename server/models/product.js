@@ -48,6 +48,19 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    variantType: {
+        type: String,
+        enum: ["", "clothing", "footwear", "accessories"],
+        default: ""
+    },
+    colors: {
+        type: [String],
+        default: []
+    },
+    sizes: {
+        type: [String],
+        default: []
+    },
     description: {
         type: String,
         required: true

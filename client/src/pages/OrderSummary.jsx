@@ -40,7 +40,7 @@ const OrderSummary = () => {
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [savingAddress, setSavingAddress] = useState(false)
     const [addressForm, setAddressForm] = useState(() => emptyAddress(user))
-    const { selectedSize, selectedVariant } = location.state || {}
+    const { selectedSize, selectedVariant, selectedColor } = location.state || {}
 
     useEffect(() => {
         const addresses = user?.addresses || []
@@ -67,7 +67,15 @@ const OrderSummary = () => {
     const deliveryDate = new Date()
     deliveryDate.setDate(deliveryDate.getDate() + 5)
     const deliveryDateText = deliveryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', weekday: 'short' })
-    const variantName = ['White', 'White/Grey', 'White/Black', 'White/Blue'][selectedVariant ?? 2]
+    const variantName = selectedColor
+        || product.colors?.[selectedVariant]
+        || (selectedVariant !== undefined && /shoe|sneaker|footwear/i.test(`${product.category || ''} ${product.title?.shortTitle || ''}`)
+            ? ['White', 'White/Grey', 'White/Black', 'White/Blue'][selectedVariant]
+            : '')
+    const selectedVariantText = [
+        selectedSize ? `Size: ${selectedSize}` : '',
+        variantName ? `Color: ${variantName}` : ''
+    ].filter(Boolean).join(' · ')
     const selectedAddress = savedAddresses.find(address => String(address._id) === String(selectedAddressId))
 
     const closeAddressOverlays = () => {
@@ -177,7 +185,7 @@ const OrderSummary = () => {
                     <img src={product.detailUrl} alt={product.title?.shortTitle || 'Product'} />
                     <div className="checkout-product-info">
                         <h2>{product.title?.longTitle || product.title?.shortTitle}</h2>
-                        {selectedSize && <p>Size: {selectedSize}{selectedVariant !== undefined && /shoe|sneaker|footwear|jean|trouser|pant/i.test(`${product.category || ''} ${product.title?.shortTitle || ''}`) ? ` · ${variantName}` : ''}</p>}
+                        {selectedVariantText && <p>{selectedVariantText}</p>}
                         <span className="checkout-product-rating">★★★★☆ <b>{Number(product.averageRating || 4.1).toFixed(1)}</b></span>
                         <div className="checkout-product-price"><span>↓{product.price?.discount || '0%'} </span><s>₹{productMrp.toLocaleString('en-IN')}</s><strong>₹{productCost.toLocaleString('en-IN')}</strong></div>
                     </div>

@@ -7,6 +7,7 @@ import Search from '../components/Header/Search'
 import { addToCart } from '../redux/features/CartSlice'
 import { useDataContextProvider } from '../context/DataProvider'
 import { useAppBack } from '../hooks/useAppBack'
+import { getProductVariantOptions } from '../utils/productVariants'
 import { useState } from 'react'
 import toast from "react-hot-toast"
 import { ArrowRight, Banknote, ChevronDown, ChevronRight, ChevronUp, CircleCheck, MapPin, PackageCheck, ShieldCheck, Store, ThumbsDown, ThumbsUp, Truck, X } from 'lucide-react'
@@ -17,6 +18,7 @@ const DetailPage = () => {
     const [pendingCheckout, setPendingCheckout] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState(2);
     const [selectedSize, setSelectedSize] = useState('');
+    const [selectedColor, setSelectedColor] = useState('');
     const [descriptionExpanded, setDescriptionExpanded] = useState(false);
     const [showSizeChart, setShowSizeChart] = useState(false);
     const [highlightsExpanded, setHighlightsExpanded] = useState(true);
@@ -52,12 +54,20 @@ const DetailPage = () => {
 
     useEffect(() => {
         if (!product?._id) return
-        const title = `${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`
-        if (/jean|trouser|pant/i.test(title)) setSelectedSize('28')
-        else if (/shoe|sneaker|footwear/i.test(title)) setSelectedSize('5')
-        else if (/shirt|dress|t-shirt|sweatshirt|hoodie/i.test(title)) setSelectedSize('M')
-        else setSelectedSize('')
-    }, [product?._id, product?.category, product?.title?.longTitle, product?.title?.shortTitle])
+        const { colors, sizes } = getProductVariantOptions({
+            category: product.category,
+            colors: product.colors,
+            sizes: product.sizes,
+            variantType: product.variantType,
+            title: {
+                shortTitle: product.title?.shortTitle,
+                longTitle: product.title?.longTitle,
+            },
+        })
+        setSelectedSize(sizes[0] || '')
+        setSelectedVariant(0)
+        setSelectedColor(colors[0] || '')
+    }, [product?._id, product?.category, product?.colors, product?.sizes, product?.title?.longTitle, product?.title?.shortTitle, product?.variantType])
 
     useEffect(() => {
         if (!productsLoaded && !loadingProducts && !productListRequestedRef.current) {
@@ -70,9 +80,9 @@ const DetailPage = () => {
         if (pendingCheckout && authenticated && product?._id === id) {
             setPendingCheckout(false)
             setShowVariantSheet(false)
-            navigate(`/checkout/${id}/summary`, { state: { selectedSize, selectedVariant } })
+            navigate(`/checkout/${id}/summary`, { state: { selectedSize, selectedVariant, selectedColor } })
         }
-    }, [authenticated, id, navigate, pendingCheckout, product?._id, selectedSize, selectedVariant])
+    }, [authenticated, id, navigate, pendingCheckout, product?._id, selectedColor, selectedSize, selectedVariant])
 
     // CART
     const addItToCart = (product, quantity) => {
@@ -105,22 +115,32 @@ const DetailPage = () => {
     const discountText = product.price?.discount || '0% off'
     const svgIconBase = '/detailpage-icon'
     const productName = product.title?.longTitle || product.title?.shortTitle || 'Product'
-    const isFootwear = /shoe|sneaker|footwear/i.test(`${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
-    const isJeans = /jean|trouser|pant/i.test(`${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
-    const isApparel = isJeans || /shirt|dress|t-shirt|sweatshirt|hoodie/i.test(`${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
-    const variantSizeOptions = isJeans
-        ? ['28', '30', '32', '34', '36', '38']
-        : isFootwear
-            ? ['3', '4', '5', '6', '7']
-            : isApparel
-                ? ['S', 'M', 'L', 'XL', 'XXL']
-                : []
-    const variants = [
-        { label: 'White', className: 'variant-white' },
-        { label: 'White/Grey', className: 'variant-grey' },
-        { label: 'White/Black', className: 'variant-black' },
-        { label: 'White/Blue', className: 'variant-blue' },
-    ]
+    const isJeans = /jean|trouser|pant/i.test(`${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
+    const isFootwear = product.variantType === 'footwear'
+        || /shoe|sneaker|sandal|slipper|footwear/i.test(`${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
+    const { colors: productColors, sizes: variantSizeOptions } = getProductVariantOptions(product)
+    const colorValues = {
+        black: '#171717',
+        white: '#ffffff',
+        blue: '#2563eb',
+        red: '#dc2626',
+        grey: '#9ca3af',
+        gray: '#9ca3af',
+        green: '#16a34a',
+        pink: '#ec4899',
+        silver: '#cbd5e1',
+        gold: '#d4a72c',
+        beige: '#d6c4a1',
+        brown: '#854d0e',
+        purple: '#9333ea',
+        yellow: '#facc15',
+    }
+    const colorValue = color => {
+        const values = color.split(/[/-]/).map(part => colorValues[part.trim().toLowerCase()] || '#94a3b8')
+        return values.length > 1
+            ? `linear-gradient(135deg, ${values[0]} 0 50%, ${values[1]} 50% 100%)`
+            : values[0]
+    }
     const productDiscount = String(discountText).match(/[0-9]+%/)?.[0] || '0%'
     const lowestPrice = product.price?.bankOfferPrice || productCost
     const description = product.description || productName
@@ -161,7 +181,7 @@ const DetailPage = () => {
         }
         if (authenticated) {
             setShowVariantSheet(false)
-            navigate(`/checkout/${id}/summary`, { state: { selectedSize, selectedVariant } })
+            navigate(`/checkout/${id}/summary`, { state: { selectedSize, selectedVariant, selectedColor } })
             return
         }
         setPendingCheckout(true)
@@ -231,31 +251,37 @@ const DetailPage = () => {
 
                     <div className="mobile-detail-body">
                         <section className="product-options-section">
-                            <div className="selected-color-line">
-                                <strong>Selected Color:</strong> {isFootwear ? variants[selectedVariant].label : 'Dark Blue'}
-                            </div>
-                            {isFootwear && <div className="variant-list" aria-label="Available colors">
-                                {variants.map((variant, index) => (
+                            {productColors.length > 0 && <>
+                                <div className="selected-color-line">
+                                    <strong>Color:</strong> {selectedColor}
+                                </div>
+                                <div className="variant-list" aria-label="Available colors">
+                                {productColors.map((color, index) => (
                                     <button
                                         className={`variant-option ${selectedVariant === index ? 'selected' : ''}`}
                                         type="button"
-                                        aria-label={`Select ${variant.label} color`}
+                                        aria-label={`Select ${color} color`}
                                         aria-pressed={selectedVariant === index}
-                                        key={variant.label}
-                                        onClick={() => setSelectedVariant(index)}
+                                        key={color}
+                                        onClick={() => {
+                                            setSelectedVariant(index)
+                                            setSelectedColor(color)
+                                        }}
                                     >
-                                        <img className={variant.className} src={product.detailUrl} alt="" />
+                                        <span className="product-color-swatch" style={{ backgroundColor: colorValue(color) }} aria-hidden="true" />
+                                        <small>{color}</small>
                                     </button>
                                 ))}
-                            </div>}
+                                </div>
+                            </>}
 
-                            {isFootwear && <div className="size-selector">
+                            {variantSizeOptions.length > 0 && <div className="size-selector">
                                 <div className="size-heading">
                                     <strong>Select Size</strong>
-                                    <button type="button" onClick={() => setShowSizeChart(!showSizeChart)}>Size Chart</button>
+                                    {isFootwear && <button type="button" onClick={() => setShowSizeChart(!showSizeChart)}>Size Chart</button>}
                                 </div>
-                                <div className="size-options" aria-label="Select shoe size">
-                                    {['3', '4', '5', '6', '7'].map(size => (
+                                <div className="size-options" aria-label="Select available size">
+                                    {variantSizeOptions.map(size => (
                                         <button
                                             className={selectedSize === size ? 'selected' : ''}
                                             type="button"
@@ -265,7 +291,7 @@ const DetailPage = () => {
                                         >{size}</button>
                                     ))}
                                 </div>
-                                {showSizeChart && <div className="size-chart-panel">
+                                {showSizeChart && isFootwear && <div className="size-chart-panel">
                                     <strong>Size chart</strong>
                                     <span>UK 3: 22 cm</span><span>UK 4: 23 cm</span><span>UK 5: 24 cm</span><span>UK 6: 25 cm</span><span>UK 7: 26 cm</span>
                                 </div>}
@@ -487,15 +513,18 @@ const DetailPage = () => {
                             <div><s>₹{productMrp.toLocaleString('en-IN')}</s><b>₹{productCost.toLocaleString('en-IN')}</b></div>
                         </div>
                     </div>
-                    {isFootwear && <div className="variant-sheet-colors" aria-label="Choose color">
-                        {variants.map((variant, index) => <button
+                    {productColors.length > 0 && <div className="variant-sheet-colors" aria-label="Choose color">
+                        {productColors.map((color, index) => <button
                             className={selectedVariant === index ? 'selected' : ''}
                             type="button"
-                            aria-label={`Select ${variant.label}`}
+                            aria-label={`Select ${color}`}
                             aria-pressed={selectedVariant === index}
-                            key={variant.label}
-                            onClick={() => setSelectedVariant(index)}
-                        ><img className={variant.className} src={product.detailUrl} alt="" /></button>)}
+                            key={color}
+                            onClick={() => {
+                                setSelectedVariant(index)
+                                setSelectedColor(color)
+                            }}
+                        ><span className="product-color-swatch" style={{ backgroundColor: colorValue(color) }} aria-hidden="true" /><small>{color}</small></button>)}
                     </div>}
                     {variantSizeOptions.length > 0 && <div className="variant-sheet-sizes">
                         <div className="variant-size-options">

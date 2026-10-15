@@ -1,6 +1,7 @@
 import { AddProduct } from "../../service/OrderApi";
 import "./Form.css";
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { FASHION_TYPES, PRODUCT_CATEGORIES, PRODUCT_COLORS, PRODUCT_SIZES } from "../../constants/productCategories";
 
 const Form = () => {
   const [formData, setFormData] = useState({
@@ -14,53 +15,50 @@ const Form = () => {
     emiAvailable: true,
     description: "",
     imageUrl: "",
+    productType: "",
+    colors: [],
+    sizes: [],
   });
 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", text: "" });
 
-  const fileInputRef = useRef(null);
-
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        setFeedback({ type: "error", text: "Please select an image file (PNG, JPG, WEBP)." });
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setFeedback({ type: "error", text: "Image must be 5 MB or smaller." });
-        return;
-      }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setFeedback({ type: "", text: "" });
+    const { name, value } = e.target;
+    if (name === "imageUrl") setImagePreviewFailed(false);
+    if (name === "category") {
+      const category = PRODUCT_CATEGORIES.find(option => option.label === value);
+      setFormData(current => ({
+        ...current,
+        category: value,
+        productType: category?.type === "fashion" ? "clothing" : "",
+        colors: [],
+        sizes: [],
+      }));
+      return;
     }
-  };
-
-  const removeSelectedImage = (e) => {
-    e.stopPropagation();
-    setImageFile(null);
-    setImagePreview("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (name === "productType") {
+      setFormData(current => ({ ...current, productType: value, sizes: [] }));
+      return;
     }
+    setFormData(current => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const toggleOption = (field, option) => {
+    setFormData(current => ({
+      ...current,
+      [field]: current[field].includes(option)
+        ? current[field].filter(value => value !== option)
+        : [...current[field], option],
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!imageFile && !formData.imageUrl.trim()) {
-      setFeedback({ type: "error", text: "Upload a product image or provide an image URL." });
+    if (!formData.imageUrl.trim()) {
+      setFeedback({ type: "error", text: "Enter a product image URL to see its preview and add the product." });
       return;
     }
 
@@ -68,7 +66,6 @@ const Form = () => {
     setFeedback({ type: "", text: "" });
 
     const data = new FormData();
-    if (imageFile) data.append("image", imageFile);
     data.append("imageUrl", formData.imageUrl.trim());
     data.append("shorttitle", formData.shorttitle);
     data.append("longtitle", formData.longtitle);
@@ -79,11 +76,14 @@ const Form = () => {
     data.append("quantity", formData.quantity);
     data.append("emiAvailable", String(formData.emiAvailable));
     data.append("description", formData.description);
+    data.append("variantType", formData.productType);
+    data.append("colors", JSON.stringify(formData.colors));
+    data.append("sizes", JSON.stringify(formData.sizes));
 
-    AddProduct(data).then(() => {
-        setLoading(false);
-        setFeedback({ type: "success", text: "Product uploaded successfully!" });
-        setFormData({
+    try {
+      await AddProduct(data);
+      setFeedback({ type: "success", text: "Product added successfully!" });
+      setFormData({
           shorttitle: "",
           longtitle: "",
           category: "",
@@ -94,22 +94,24 @@ const Form = () => {
           emiAvailable: true,
           description: "",
           imageUrl: "",
-        });
-        setImageFile(null);
-        setImagePreview("");
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      })
-      .catch((err) => {
-        setLoading(false);
-        setFeedback({ 
-          type: "error", 
-          text: err.response?.data?.message || "Failed to upload product. Check backend server and try again." 
-        });
-        console.error("Error adding product:", err);
+          productType: "",
+          colors: [],
+          sizes: [],
       });
+      setImagePreviewFailed(false);
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        text: err.response?.data?.message || "Failed to add product. Check the backend connection and try again."
+      });
+      console.error("Error adding product:", err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const selectedCategory = PRODUCT_CATEGORIES.find(category => category.label === formData.category);
+  const availableSizes = PRODUCT_SIZES[formData.productType] || [];
 
   return (
     <div className="form-wrapper">
@@ -125,46 +127,23 @@ const Form = () => {
       <form className="product-form" onSubmit={handleSubmit}>
 
         <div className="form-row full">
-          <label className="field-label">Product Image</label>
-          <div 
-            className={`upload-zone ${imagePreview ? "has-image" : ""}`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*" 
-              onChange={handleFileChange} 
-              style={{ display: "none" }} 
-            />
-            
-            {!imagePreview ? (
-              <div className="upload-placeholder">
-                <i className="fas fa-cloud-upload-alt upload-icon"></i>
-                <p className="upload-text">Click or Drag to Upload Product Image</p>
-                <span className="upload-subtext">Supports PNG, JPG, JPEG, WEBP (Max 5MB)</span>
-              </div>
-            ) : (
-              <div className="upload-preview-container">
-                <img src={imagePreview} alt="Preview" className="upload-preview-img" />
-                <button type="button" className="remove-img-btn" onClick={removeSelectedImage}>
-                  <i className="fas fa-trash-alt"></i> Remove Image
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="form-row full">
-          <label htmlFor="imageUrl">Or use an image URL</label>
+          <label htmlFor="imageUrl">Product image URL <span className="required-mark">*</span></label>
           <input
             id="imageUrl"
             type="url"
             name="imageUrl"
             value={formData.imageUrl}
             onChange={handleChange}
+            required
             placeholder="https://example.com/product-image.jpg"
           />
+          {formData.imageUrl && (
+            <div className="product-image-preview" aria-live="polite">
+              {imagePreviewFailed
+                ? <p className="image-preview-error">Image preview unavailable. Check that the URL points directly to an image.</p>
+                : <img src={formData.imageUrl} alt="Product preview" onError={() => setImagePreviewFailed(true)} />}
+            </div>
+          )}
         </div>
 
         <div className="form-row two-col">
@@ -180,14 +159,58 @@ const Form = () => {
 
         <div className="form-row two-col">
           <div>
-            <label>Category</label>
-            <input type="text" value={formData.category} name="category" onChange={handleChange} required />
+            <label htmlFor="category">Category <span className="required-mark">*</span></label>
+            <select id="category" value={formData.category} name="category" onChange={handleChange} required>
+              <option value="" disabled>Select a product category</option>
+              {PRODUCT_CATEGORIES.map(category => <option key={category.label} value={category.label}>{category.label}</option>)}
+            </select>
           </div>
           <div>
-            <label>Discount</label>
+            <label htmlFor="discount">Discount</label>
             <input type="text" value={formData.discount} name="discount" onChange={handleChange} required />
           </div>
         </div>
+
+        {selectedCategory && <section className="variant-fields" aria-label="Product variants">
+          <div className="variant-fields-heading">
+            <h3>Variants</h3>
+            <p>Options selected here are shown to customers on the product page.</p>
+          </div>
+
+          {selectedCategory.type === "fashion" && <>
+            <div className="form-row">
+              <label htmlFor="productType">Fashion type</label>
+              <select id="productType" name="productType" value={formData.productType} onChange={handleChange}>
+                {FASHION_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
+              </select>
+            </div>
+          </>}
+
+          {selectedCategory.hasColors && <fieldset className="variant-choice-group">
+            <legend>Available colors <span className="optional-mark">(optional)</span></legend>
+            <div className="variant-choice-list">
+              {PRODUCT_COLORS.map(color => <label className={`variant-choice ${formData.colors.includes(color) ? "selected" : ""}`} key={color}>
+                <input type="checkbox" checked={formData.colors.includes(color)} onChange={() => toggleOption("colors", color)} />
+                <span className={`color-swatch color-swatch-${color.toLowerCase()}`} />
+                {color}
+              </label>)}
+            </div>
+          </fieldset>}
+
+          {availableSizes.length > 0 && <fieldset className="variant-choice-group">
+            <legend>Available sizes <span className="optional-mark">(optional)</span></legend>
+            <div className="variant-choice-list size-choice-list">
+              {availableSizes.map(size => <label className={`variant-choice size-choice ${formData.sizes.includes(size) ? "selected" : ""}`} key={size}>
+                <input type="checkbox" checked={formData.sizes.includes(size)} onChange={() => toggleOption("sizes", size)} />
+                {size}
+              </label>)}
+            </div>
+          </fieldset>}
+
+          {!selectedCategory.hasColors && availableSizes.length === 0 && (
+            <p className="variant-fields-empty">This category does not use color or size variants.</p>
+          )}
+        </section>}
 
         <div className="form-row three-col">
           <div>
