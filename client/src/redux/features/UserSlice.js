@@ -23,11 +23,15 @@ export const fetchMe = createAsyncThunk(
 //Login User
 export const loginUser = createAsyncThunk(
     "user/loginUser",
-    async (cred) => {
-        const { data } = await axiosInstance.post(`/login`, cred)
-        return {
-            user: data.resUser,
-            token: data.token
+    async (cred, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.post(`/login`, cred)
+            return {
+                user: data.resUser,
+                token: data.token
+            }
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || error.message || "Login failed")
         }
     }
 )

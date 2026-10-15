@@ -17,6 +17,10 @@ const DEMO_USER = {
     password: 'Demo@123'
 }
 
+const getLoginErrorMessage = error => typeof error === 'string'
+    ? error
+    : error.response?.data?.message || error.message || 'Login failed. Try again.'
+
 const LoginSignup = () => {
 
     const { setLoginForm, checkoutLogin, setCheckoutLogin } = useDataContextProvider();
@@ -45,6 +49,7 @@ const LoginSignup = () => {
     const [loading, setLoading] = useState(false);
     const [otpLoading, setOtpLoading] = useState(false);
     const [useEmailLogin, setUseEmailLogin] = useState(false);
+    const [usePasswordLogin, setUsePasswordLogin] = useState(false);
     const [otpIdentifier, setOtpIdentifier] = useState(null);
         const [otpPurpose, setOtpPurpose] = useState('login');
     const [otpDigits, setOtpDigits] = useState(Array(6).fill(''));
@@ -104,7 +109,7 @@ const LoginSignup = () => {
             await dispatch(loginUser(demoCredentials)).unwrap()
             toast.success('Demo login successful!')
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Demo login failed. Try again.')
+            toast.error(getLoginErrorMessage(error))
         } finally {
             setLoading(false)
         }
@@ -121,7 +126,7 @@ const LoginSignup = () => {
             toast.success('Logged in successfully!')
             setLoading(false);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed. Try again.')
+            toast.error(getLoginErrorMessage(error))
             setLoading(false);
         }
     }
@@ -277,7 +282,19 @@ const LoginSignup = () => {
                 <strong>{DEMO_USER.email}</strong>
                 <small>Password: {DEMO_USER.password}</small>
             </div>
-            {useEmailLogin ? <>
+            {usePasswordLogin ? <>
+                <div className="email-number-input-wrap">
+                    <label htmlFor="checkout-password-email">Email ID</label>
+                    <input id="checkout-password-email" value={loginData.email} onChange={onloginInputChange} type="email" placeholder="" name="email" autoComplete="email" />
+                </div>
+                <div className="email-number-input-wrap">
+                    <label htmlFor="checkout-password">Password</label>
+                    <input id="checkout-password" value={loginData.password} onChange={onloginInputChange} type="password" placeholder="" name="password" autoComplete="current-password" />
+                </div>
+                <button className="checkout-auth-primary" type="button" onClick={loghimin} disabled={loading || !loginData.email || !loginData.password}>
+                    {loading ? <span className="spinner-border spinner-border-sm" role="status" /> : 'Log in'}
+                </button>
+            </> : useEmailLogin ? <>
                 <div className="email-number-input-wrap">
                     <label htmlFor="checkout-email">Email ID</label>
                     <input id="checkout-email" value={loginData.email} onChange={onloginInputChange} type="email" placeholder="" name="email" autoComplete="email" />
@@ -288,18 +305,21 @@ const LoginSignup = () => {
                     <div className="phone-number-input-wrap"><span>+91</span><input id="checkout-phone" value={loginData.phone} onChange={onloginInputChange} type="tel" inputMode="numeric" placeholder="" name="phone" autoComplete="tel-national" maxLength={10} /></div>
                 </div>
             </>}
-            <button className="checkout-auth-text-button" type="button" onClick={() => setUseEmailLogin(!useEmailLogin)}>
+            {!usePasswordLogin && <button className="checkout-auth-text-button" type="button" onClick={() => setUseEmailLogin(!useEmailLogin)}>
                 {useEmailLogin ? 'Use Phone Number' : 'Use Email-ID'}
+            </button>}
+            <button className="checkout-auth-text-button" type="button" onClick={() => setUsePasswordLogin(!usePasswordLogin)}>
+                {usePasswordLogin ? 'Use OTP instead' : 'Log in with email and password'}
             </button>
             <button className="demo-login-button" type="button" onClick={handleDemoLogin} disabled={loading}>
                 {loading ? 'Logging in...' : 'Use Demo Login'}
             </button>
             <p className="checkout-auth-terms">By continuing, you confirm that you are above 18 years of age, and you agree to Flipkart's <a href="#terms">Terms of Use</a> and <a href="#privacy">Privacy Policy</a>.</p>
-            <div className="checkout-auth-footer">
+            {!usePasswordLogin && <div className="checkout-auth-footer">
                 <button className="checkout-auth-primary" type="button" onClick={() => reqOtp(useEmailLogin ? { email: loginData.email } : { phone: loginData.phone })} disabled={loading || otpLoading || (useEmailLogin ? !loginData.email : loginData.phone.length !== 10)}>
                     {loading || otpLoading ? <span className="spinner-border spinner-border-sm" role="status" /> : 'Continue'}
                 </button>
-            </div>
+            </div>}
         </div> : <div className="right-section">
             <div className="input-section">
                 <input value={loginData.email} onChange={onloginInputChange} type="email" placeholder='Enter Email' name='email' />
