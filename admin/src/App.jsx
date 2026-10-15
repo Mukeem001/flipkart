@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import AdminLayout from './components/layout/AdminLayout'
 import Dashboard from './pages/Dashboard'
 import AddProducts from './pages/AddProducts';
+import EditProduct from './pages/EditProduct';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
 import PaymentSettings from './pages/PaymentSettings';
@@ -29,6 +30,7 @@ const App = () => {
             <Route path='/' element={<Dashboard />} />
             <Route path='/products' element={<Products />} />
             <Route path='/add-products' element={<AddProducts />} />
+            <Route path='/edit-products/:id' element={<EditProduct />} />
             <Route path='/orders' element={<Orders />} />
             <Route path='/users' element={<Users />} />
             <Route path='/payment-settings' element={<PaymentSettings />} />

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useProductContext } from "../../context/ProductContext";
 import { DeleteProduct, UpdateOrderPaymentStatus, UpdateOrderStatus } from "../../service/OrderApi";
+import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import "./ProductList.css"
 
@@ -131,7 +132,12 @@ const ProductsList = ({ orderColumns, products, orders, totalPages = 1, totalPro
                                         <td className="px-4 py-3.5">{product.category || '—'}</td>
                                         <td className="px-4 py-3.5 font-semibold text-slate-800">₹{Number(product.price?.cost || 0).toLocaleString('en-IN')}</td>
                                         <td className="px-4 py-3.5">{product.quantity ?? 0}</td>
-                                        <td className="px-4 py-3.5"><button className="rounded-md border border-rose-200 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50" onClick={() => setDeleteProductId(product._id)} disabled={loadingId === product._id}>Delete</button></td>
+                                        <td className="px-4 py-3.5"><div className="flex items-center gap-2">
+                                            <Link to={`/edit-products/${product._id}`} className="grid h-8 w-8 place-items-center rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50" title="Edit product" aria-label={`Edit ${product.title?.shortTitle || 'product'}`}>
+                                                <i className="fa-solid fa-pen-to-square text-[12px]" />
+                                            </Link>
+                                            <button className="rounded-md border border-rose-200 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50" onClick={() => setDeleteProductId(product._id)} disabled={loadingId === product._id}>Delete</button>
+                                        </div></td>
                                     </tr>
                                 )) : orders?.map((order, index) => {
                                     const displayStatus = statusMap[order._id] || order.status;

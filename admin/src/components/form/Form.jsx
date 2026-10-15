@@ -1,10 +1,9 @@
-import { AddProduct } from "../../service/OrderApi";
+import { AddProduct, UpdateProduct } from "../../service/OrderApi";
 import "./Form.css";
 import { useState } from "react";
 import { FASHION_TYPES, PRODUCT_CATEGORIES, PRODUCT_COLORS, PRODUCT_SIZES } from "../../constants/productCategories";
 
-const Form = () => {
-  const [formData, setFormData] = useState({
+const getInitialFormData = (product) => ({
     shorttitle: "",
     longtitle: "",
     category: "",
@@ -20,7 +19,30 @@ const Form = () => {
     colors: [],
     colorImages: {},
     sizes: [],
-  });
+    ...(product ? {
+      shorttitle: product.title?.shortTitle || "",
+      longtitle: product.title?.longTitle || "",
+      category: product.category || "",
+      mrp: product.price?.mrp ?? "",
+      cost: product.price?.cost ?? "",
+      discount: product.price?.discount || "",
+      quantity: product.quantity ?? 1,
+      emiAvailable: Boolean(product.emiAvailable),
+      description: product.description || "",
+      imageUrl: product.detailUrl || "",
+      galleryImages: product.galleryImages || [],
+      productType: product.variantType || "",
+      colors: product.colors || [],
+      colorImages: Object.fromEntries((product.colorImages || []).map(item => [
+        item.color,
+        item.imageUrls?.length ? item.imageUrls : item.imageUrl ? [item.imageUrl] : [""],
+      ])),
+      sizes: product.sizes || [],
+    } : {}),
+});
+
+const Form = ({ product, onSaved }) => {
+  const [formData, setFormData] = useState(() => getInitialFormData(product));
 
   const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -145,9 +167,14 @@ const Form = () => {
     data.append("sizes", JSON.stringify(formData.sizes));
 
     try {
-      await AddProduct(data);
-      setFeedback({ type: "success", text: "Product added successfully!" });
-      setFormData({
+      if (product?._id) {
+        await UpdateProduct(product._id, data);
+        setFeedback({ type: "success", text: "Product updated successfully!" });
+        onSaved?.();
+      } else {
+        await AddProduct(data);
+        setFeedback({ type: "success", text: "Product added successfully!" });
+        setFormData({
           shorttitle: "",
           longtitle: "",
           category: "",
@@ -163,8 +190,9 @@ const Form = () => {
           colors: [],
           colorImages: {},
           sizes: [],
-      });
-      setImagePreviewFailed(false);
+        });
+        setImagePreviewFailed(false);
+      }
     } catch (err) {
       setFeedback({
         type: "error",
@@ -181,7 +209,7 @@ const Form = () => {
 
   return (
     <div className="form-wrapper">
-      <h2>Add New Product</h2>
+      <h2>{product ? "Edit Product" : "Add New Product"}</h2>
       
       {feedback.text && (
         <div className={`feedback-alert ${feedback.type}`}>
@@ -405,7 +433,7 @@ const Form = () => {
                 Uploading...
               </>
             ) : (
-              "Add Product"
+              product ? "Save Changes" : "Add Product"
             )}
           </button>
         </div>

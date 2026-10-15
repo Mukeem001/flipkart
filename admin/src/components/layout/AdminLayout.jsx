@@ -17,7 +17,9 @@ const AdminLayout = () => {
     const [search, setSearch] = useState('')
     const location = useLocation()
     const navigate = useNavigate()
-    const title = pageTitles[location.pathname] || 'Admin'
+    const title = location.pathname.startsWith('/edit-products')
+        ? 'Edit Product'
+        : pageTitles[location.pathname] || 'Admin'
 
     const submitSearch = (event) => {
         event.preventDefault()

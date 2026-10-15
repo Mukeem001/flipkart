@@ -32,6 +32,18 @@ export const AddProduct = async (formData) => {
     return res.data;
 }
 
+export const GetProduct = async (id) => {
+    const res = await axios.get(`${URL}/product/${id}`)
+    return res.data.singleProduct
+}
+
+export const UpdateProduct = async (id, formData) => {
+    const res = await axios.put(`${URL}/admin/products/${id}`, formData, {
+        headers: getAuthHeaders()
+    })
+    return res.data.product
+}
+
 //For All Products
 export const AllProducts = async (queryString) => {
     const res = await axios.get(`${URL}/allproducts?${queryString}`)

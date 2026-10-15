@@ -88,17 +88,17 @@ module.exports.product = wrapAsync(async (req, res) => {
     })
 })
 
-// Add product
-module.exports.AddProduct = wrapAsync(async (req, res) => {
+const parseProductInput = (req, res) => {
     const { quantity, category, description, longtitle, shorttitle, mrp, cost, discount, emiAvailable, variantType } = req.body
-    const detailUrl = req.file?.path || req.body.imageUrl?.trim();
+    const detailUrl = req.file?.path || req.body.imageUrl?.trim()
     const publicId = req.file?.filename;
 
     if (!detailUrl) {
-        return res.status(400).json({
+        res.status(400).json({
             success: false,
-            message: "Upload an image or provide an image URL"
+            message: "Provide a main product image URL."
         })
+        return null
     }
 
     const parseVariantList = value => {
@@ -120,17 +120,19 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
     const colors = parseVariantList(req.body.colors, "colors")
     const sizes = parseVariantList(req.body.sizes, "sizes")
     if (!colors || !sizes) {
-        return res.status(400).json({
+        res.status(400).json({
             success: false,
             message: "Product colors and sizes must be valid lists of text values."
         })
+        return null
     }
     const validVariantTypes = ["", "clothing", "footwear", "accessories"]
     if (typeof variantType === "string" && !validVariantTypes.includes(variantType)) {
-        return res.status(400).json({
+        res.status(400).json({
             success: false,
             message: "Product variant type must be clothing, footwear, or accessories."
         })
+        return null
     }
 
     const parseJsonField = value => {
@@ -165,16 +167,18 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
         return { color: item.color.trim(), imageUrls: imageUrls.map(imageUrl => imageUrl.trim()) }
     })
     if (!galleryImages || !rawColorImages
+        || !isValidImageUrl(detailUrl)
         || galleryImages.some(imageUrl => !isValidImageUrl(imageUrl))
         || !normalizedColorImages
         || normalizedColorImages.some(item => !item || !colors.includes(item.color))) {
-        return res.status(400).json({
+        res.status(400).json({
             success: false,
             message: "Gallery and color-specific images must use valid HTTP or HTTPS image URLs."
         })
+        return null
     }
 
-    const product = new Product({
+    return {
         detailUrl,
         galleryImages: galleryImages.map(imageUrl => imageUrl.trim()),
         colorImages: normalizedColorImages.map(({ color, imageUrls }) => ({
@@ -199,9 +203,29 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
         colors,
         sizes,
         description
-    })
+    }
+}
+
+// Add product
+module.exports.AddProduct = wrapAsync(async (req, res) => {
+    const productInput = parseProductInput(req, res)
+    if (!productInput) return
+    const product = new Product(productInput)
     await product.save()
     res.status(200).json({ message: "Product Added", product })
+})
+
+module.exports.UpdateProduct = wrapAsync(async (req, res) => {
+    const product = await Product.findById(req.params.id)
+    if (!product) {
+        return res.status(404).json({ success: false, message: "Product not found." })
+    }
+    const productInput = parseProductInput(req, res)
+    if (!productInput) return
+    if (!req.file) delete productInput.publicId
+    Object.assign(product, productInput)
+    await product.save()
+    res.status(200).json({ success: true, message: "Product updated.", product })
 })
 
 //Add Product Review
