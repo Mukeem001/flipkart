@@ -19,6 +19,7 @@ const DetailPage = () => {
     const [selectedVariant, setSelectedVariant] = useState(2);
     const [selectedSize, setSelectedSize] = useState('');
     const [selectedColor, setSelectedColor] = useState('');
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [descriptionExpanded, setDescriptionExpanded] = useState(false);
     const [showSizeChart, setShowSizeChart] = useState(false);
     const [highlightsExpanded, setHighlightsExpanded] = useState(true);
@@ -26,6 +27,7 @@ const DetailPage = () => {
     const [reviewsExpanded, setReviewsExpanded] = useState(true);
     const [topbarStuck, setTopbarStuck] = useState(false);
     const similarProductsRef = useRef(null);
+    const touchStartXRef = useRef(null);
     const productListRequestedRef = useRef(false);
 
     const navigate = useNavigate()
@@ -67,6 +69,7 @@ const DetailPage = () => {
         setSelectedSize(sizes[0] || '')
         setSelectedVariant(0)
         setSelectedColor(colors[0] || '')
+        setSelectedImageIndex(0)
     }, [product?._id, product?.category, product?.colors, product?.sizes, product?.title?.longTitle, product?.title?.shortTitle, product?.variantType])
 
     useEffect(() => {
@@ -119,6 +122,13 @@ const DetailPage = () => {
     const isFootwear = product.variantType === 'footwear'
         || /shoe|sneaker|sandal|slipper|footwear/i.test(`${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
     const { colors: productColors, sizes: variantSizeOptions } = getProductVariantOptions(product)
+    const selectedColorImage = product.colorImages?.find(image => image.color === selectedColor)?.imageUrl
+    const galleryImageUrls = [...new Set([
+        selectedColorImage,
+        product.detailUrl,
+        ...(Array.isArray(product.galleryImages) ? product.galleryImages : []),
+    ].filter(Boolean))]
+    const visibleImageUrl = galleryImageUrls[selectedImageIndex] || product.detailUrl
     const colorValues = {
         black: '#171717',
         white: '#ffffff',
@@ -190,6 +200,20 @@ const DetailPage = () => {
         setLoginForm(true)
     }
 
+    const showPreviousImage = () => setSelectedImageIndex(index => (index - 1 + galleryImageUrls.length) % galleryImageUrls.length)
+    const showNextImage = () => setSelectedImageIndex(index => (index + 1) % galleryImageUrls.length)
+    const handleGalleryTouchStart = event => {
+        touchStartXRef.current = event.touches[0].clientX
+    }
+    const handleGalleryTouchEnd = event => {
+        if (touchStartXRef.current === null) return
+        const distance = event.changedTouches[0].clientX - touchStartXRef.current
+        touchStartXRef.current = null
+        if (Math.abs(distance) < 40 || galleryImageUrls.length < 2) return
+        if (distance < 0) showNextImage()
+        else showPreviousImage()
+    }
+
     return (
         <>
             <div className="detail-section mobile-detail-shell">
@@ -218,7 +242,11 @@ const DetailPage = () => {
                         </div>
                     </div>
 
-                    <div className="detail-image-stage">
+                    <div
+                        className="detail-image-stage"
+                        onTouchStart={handleGalleryTouchStart}
+                        onTouchEnd={handleGalleryTouchEnd}
+                    >
                         <div className="floating-action-buttons">
                             <button type="button" className="float-button" aria-label="Add to wishlist">
                                 <img src={`${svgIconBase}/like-plus-icon.svg`} alt="Wishlist" />
@@ -228,8 +256,12 @@ const DetailPage = () => {
                             </button>
                         </div>
                         <div className="product-visual-card">
-                            <img src={product.detailUrl} alt={product.title?.shortTitle || 'product'} />
+                            <img src={visibleImageUrl} alt={`${product.title?.shortTitle || 'Product'}${selectedColor ? ` in ${selectedColor}` : ''}`} />
                         </div>
+                        {galleryImageUrls.length > 1 && <>
+                            <button className="gallery-arrow gallery-arrow-previous" type="button" aria-label="Previous product image" onClick={showPreviousImage}>‹</button>
+                            <button className="gallery-arrow gallery-arrow-next" type="button" aria-label="Next product image" onClick={showNextImage}>›</button>
+                        </>}
                         <div className="detail-rating-row">
                             <div className="rating-chip">
                                 <span className="rating-score">{averageRating.toFixed(1)}</span>
@@ -240,14 +272,16 @@ const DetailPage = () => {
                         </div>
                     </div>
 
-                    <div className="detail-image-pagination" aria-label="Product image 1 of 6">
-                        <span className="active" />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                    </div>
+                    {galleryImageUrls.length > 1 && <div className="detail-image-pagination" aria-label={`Product image ${selectedImageIndex + 1} of ${galleryImageUrls.length}`}>
+                        {galleryImageUrls.map((imageUrl, index) => <button
+                            className={selectedImageIndex === index ? 'active' : ''}
+                            type="button"
+                            aria-label={`Show product image ${index + 1}`}
+                            aria-pressed={selectedImageIndex === index}
+                            key={`${imageUrl}-${index}`}
+                            onClick={() => setSelectedImageIndex(index)}
+                        />)}
+                    </div>}
 
                     <div className="mobile-detail-body">
                         <section className="product-options-section">
@@ -266,6 +300,7 @@ const DetailPage = () => {
                                         onClick={() => {
                                             setSelectedVariant(index)
                                             setSelectedColor(color)
+                                            setSelectedImageIndex(0)
                                         }}
                                     >
                                         <span className="product-color-swatch" style={{ backgroundColor: colorValue(color) }} aria-hidden="true" />
@@ -523,6 +558,7 @@ const DetailPage = () => {
                             onClick={() => {
                                 setSelectedVariant(index)
                                 setSelectedColor(color)
+                                setSelectedImageIndex(0)
                             }}
                         ><span className="product-color-swatch" style={{ backgroundColor: colorValue(color) }} aria-hidden="true" /><small>{color}</small></button>)}
                     </div>}

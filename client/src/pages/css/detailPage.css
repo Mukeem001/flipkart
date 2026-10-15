@@ -150,6 +150,7 @@
   position: relative;
   background: #f1f1f1;
   padding: 80px 0 0;
+  touch-action: pan-y;
 }
 
 .floating-action-buttons {
@@ -196,6 +197,33 @@
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 24px 22px rgba(15, 23, 42, 0.1));
+  transition: opacity 180ms ease;
+}
+
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: 38px;
+  height: 48px;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 88%);
+  color: #1f2937;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gallery-arrow-previous {
+  left: 12px;
+}
+
+.gallery-arrow-next {
+  right: 12px;
 }
 
 .detail-image-stage .detail-rating-row {
@@ -259,14 +287,17 @@
   background: #fff;
 }
 
-.detail-image-pagination span {
+.detail-image-pagination button {
   width: 12px;
   height: 12px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   background: #dedede;
+  cursor: pointer;
 }
 
-.detail-image-pagination span.active {
+.detail-image-pagination button.active {
   width: 20px;
   height: 20px;
   background: #1551e5;
@@ -740,14 +771,20 @@
     gap: 10px;
   }
 
-  .detail-image-pagination span {
+  .detail-image-pagination button {
     width: 9px;
     height: 9px;
   }
 
-  .detail-image-pagination span.active {
+  .detail-image-pagination button.active {
     width: 16px;
     height: 16px;
+  }
+
+  .gallery-arrow {
+    width: 32px;
+    height: 42px;
+    font-size: 26px;
   }
 
   .mobile-detail-body {

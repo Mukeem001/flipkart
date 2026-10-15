@@ -5,6 +5,20 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    galleryImages: {
+        type: [String],
+        default: []
+    },
+    colorImages: [{
+        color: {
+            type: String,
+            required: true
+        },
+        imageUrl: {
+            type: String,
+            required: true
+        }
+    }],
     publicId:{
         type: String,
     },

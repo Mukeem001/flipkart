@@ -15,8 +15,10 @@ const Form = () => {
     emiAvailable: true,
     description: "",
     imageUrl: "",
+    galleryImages: [],
     productType: "",
     colors: [],
+    colorImages: {},
     sizes: [],
   });
 
@@ -34,6 +36,7 @@ const Form = () => {
         category: value,
         productType: category?.type === "fashion" ? "clothing" : "",
         colors: [],
+        colorImages: {},
         sizes: [],
       }));
       return;
@@ -54,6 +57,33 @@ const Form = () => {
     }));
   };
 
+  const updateGalleryImage = (index, value) => {
+    setFormData(current => ({
+      ...current,
+      galleryImages: current.galleryImages.map((image, imageIndex) => imageIndex === index ? value : image),
+    }));
+  };
+
+  const updateColorImage = (color, value) => {
+    setFormData(current => ({
+      ...current,
+      colorImages: { ...current.colorImages, [color]: value },
+    }));
+  };
+
+  const toggleColor = (color) => {
+    setFormData(current => {
+      const selected = current.colors.includes(color);
+      const colorImages = { ...current.colorImages };
+      if (selected) delete colorImages[color];
+      return {
+        ...current,
+        colors: selected ? current.colors.filter(value => value !== color) : [...current.colors, color],
+        colorImages,
+      };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -67,6 +97,12 @@ const Form = () => {
 
     const data = new FormData();
     data.append("imageUrl", formData.imageUrl.trim());
+    data.append("galleryImages", JSON.stringify(formData.galleryImages.map(url => url.trim()).filter(Boolean)));
+    data.append("colorImages", JSON.stringify(
+      Object.entries(formData.colorImages)
+        .filter(([color, imageUrl]) => formData.colors.includes(color) && imageUrl.trim())
+        .map(([color, imageUrl]) => ({ color, imageUrl: imageUrl.trim() }))
+    ));
     data.append("shorttitle", formData.shorttitle);
     data.append("longtitle", formData.longtitle);
     data.append("category", formData.category);
@@ -94,8 +130,10 @@ const Form = () => {
           emiAvailable: true,
           description: "",
           imageUrl: "",
+          galleryImages: [],
           productType: "",
           colors: [],
+          colorImages: {},
           sizes: [],
       });
       setImagePreviewFailed(false);
@@ -146,6 +184,42 @@ const Form = () => {
           )}
         </div>
 
+        <section className="image-variants-section" aria-label="Product image gallery">
+          <div className="image-variants-heading">
+            <h3>More product images</h3>
+            <p>Add optional image URLs customers can swipe through on the product page.</p>
+          </div>
+          {formData.galleryImages.map((imageUrl, index) => (
+            <div className="extra-image-field" key={`gallery-${index}`}>
+              <div className="form-row">
+                <label htmlFor={`galleryImage-${index}`}>Gallery image {index + 1} URL</label>
+                <input
+                  id={`galleryImage-${index}`}
+                  type="url"
+                  value={imageUrl}
+                  onChange={event => updateGalleryImage(index, event.target.value)}
+                  placeholder="https://example.com/another-view.jpg"
+                />
+              </div>
+              <button
+                className="remove-image-button"
+                type="button"
+                aria-label={`Remove gallery image ${index + 1}`}
+                onClick={() => setFormData(current => ({
+                  ...current,
+                  galleryImages: current.galleryImages.filter((_, imageIndex) => imageIndex !== index),
+                }))}
+              >Remove</button>
+              {imageUrl && <img className="variant-image-preview" src={imageUrl} alt={`Gallery preview ${index + 1}`} />}
+            </div>
+          ))}
+          <button
+            className="add-image-button"
+            type="button"
+            onClick={() => setFormData(current => ({ ...current, galleryImages: [...current.galleryImages, ""] }))}
+          >+ Add another image</button>
+        </section>
+
         <div className="form-row two-col">
           <div>
             <label>Short Title</label>
@@ -190,12 +264,37 @@ const Form = () => {
             <legend>Available colors <span className="optional-mark">(optional)</span></legend>
             <div className="variant-choice-list">
               {PRODUCT_COLORS.map(color => <label className={`variant-choice ${formData.colors.includes(color) ? "selected" : ""}`} key={color}>
-                <input type="checkbox" checked={formData.colors.includes(color)} onChange={() => toggleOption("colors", color)} />
+                <input type="checkbox" checked={formData.colors.includes(color)} onChange={() => toggleColor(color)} />
                 <span className={`color-swatch color-swatch-${color.toLowerCase()}`} />
                 {color}
               </label>)}
             </div>
           </fieldset>}
+
+          {formData.colors.length > 0 && <section className="color-image-fields" aria-label="Color-specific product images">
+            <div className="image-variants-heading">
+              <h3>Images for each color</h3>
+              <p>Optional: a matching image will show when a customer selects that color.</p>
+            </div>
+            {formData.colors.map(color => (
+              <div className="color-image-field" key={color}>
+                <label htmlFor={`colorImage-${color}`}>
+                  <span className={`color-swatch color-swatch-${color.toLowerCase()}`} />
+                  {color} image URL
+                </label>
+                <input
+                  id={`colorImage-${color}`}
+                  type="url"
+                  value={formData.colorImages[color] || ""}
+                  onChange={event => updateColorImage(color, event.target.value)}
+                  placeholder={`https://example.com/${color.toLowerCase()}-product.jpg`}
+                />
+                {formData.colorImages[color] && (
+                  <img className="variant-image-preview" src={formData.colorImages[color]} alt={`${color} product preview`} />
+                )}
+              </div>
+            ))}
+          </section>}
 
           {availableSizes.length > 0 && <fieldset className="variant-choice-group">
             <legend>Available sizes <span className="optional-mark">(optional)</span></legend>

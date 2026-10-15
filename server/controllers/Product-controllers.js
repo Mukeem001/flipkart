@@ -133,8 +133,45 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
         })
     }
 
+    const parseJsonField = value => {
+        if (typeof value === "undefined" || value === "") return []
+        if (typeof value !== "string") return null
+        try {
+            const parsed = JSON.parse(value)
+            return Array.isArray(parsed) ? parsed : null
+        } catch {
+            return null
+        }
+    }
+    const isValidImageUrl = value => {
+        if (typeof value !== "string") return false
+        try {
+            const url = new URL(value)
+            return ["http:", "https:"].includes(url.protocol)
+        } catch {
+            return false
+        }
+    }
+    const galleryImages = parseJsonField(req.body.galleryImages)
+    const rawColorImages = parseJsonField(req.body.colorImages)
+    if (!galleryImages || !rawColorImages
+        || galleryImages.some(imageUrl => !isValidImageUrl(imageUrl))
+        || rawColorImages.some(item => !item || typeof item.color !== "string"
+            || !colors.includes(item.color.trim())
+            || !isValidImageUrl(item.imageUrl))) {
+        return res.status(400).json({
+            success: false,
+            message: "Gallery and color-specific images must use valid HTTP or HTTPS image URLs."
+        })
+    }
+
     const product = new Product({
         detailUrl,
+        galleryImages: galleryImages.map(imageUrl => imageUrl.trim()),
+        colorImages: rawColorImages.map(({ color, imageUrl }) => ({
+            color: color.trim(),
+            imageUrl: imageUrl.trim()
+        })),
         publicId,
         title: {
             shortTitle: shorttitle,
