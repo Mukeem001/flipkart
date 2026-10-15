@@ -7,7 +7,7 @@ import Search from '../components/Header/Search'
 import { addToCart } from '../redux/features/CartSlice'
 import { useDataContextProvider } from '../context/DataProvider'
 import { useAppBack } from '../hooks/useAppBack'
-import { getProductVariantOptions } from '../utils/productVariants'
+import { getProductGalleryImages, getProductVariantOptions } from '../utils/productVariants'
 import { useState } from 'react'
 import toast from "react-hot-toast"
 import { ArrowRight, Banknote, ChevronDown, ChevronRight, ChevronUp, CircleCheck, MapPin, PackageCheck, ShieldCheck, Store, ThumbsDown, ThumbsUp, Truck, X } from 'lucide-react'
@@ -122,12 +122,7 @@ const DetailPage = () => {
     const isFootwear = product.variantType === 'footwear'
         || /shoe|sneaker|sandal|slipper|footwear/i.test(`${product.category || ''} ${product.title?.shortTitle || ''} ${product.title?.longTitle || ''}`)
     const { colors: productColors, sizes: variantSizeOptions } = getProductVariantOptions(product)
-    const selectedColorImage = product.colorImages?.find(image => image.color === selectedColor)?.imageUrl
-    const galleryImageUrls = [...new Set([
-        selectedColorImage,
-        product.detailUrl,
-        ...(Array.isArray(product.galleryImages) ? product.galleryImages : []),
-    ].filter(Boolean))]
+    const galleryImageUrls = getProductGalleryImages(product, selectedColor)
     const visibleImageUrl = galleryImageUrls[selectedImageIndex] || product.detailUrl
     const colorValues = {
         black: '#171717',

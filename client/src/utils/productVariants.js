@@ -46,3 +46,17 @@ export const getProductVariantOptions = (product) => {
 
     return { colors, sizes }
 }
+
+export const getProductGalleryImages = (product, selectedColor) => {
+    const colorImages = product.colorImages?.find(image => image.color === selectedColor)
+    const selectedImages = Array.isArray(colorImages?.imageUrls) && colorImages.imageUrls.length
+        ? colorImages.imageUrls
+        : colorImages?.imageUrl
+            ? [colorImages.imageUrl]
+            : []
+    const imageUrls = selectedImages.length
+        ? selectedImages
+        : [product.detailUrl, ...(Array.isArray(product.galleryImages) ? product.galleryImages : [])]
+
+    return [...new Set(imageUrls.filter(Boolean))]
+}

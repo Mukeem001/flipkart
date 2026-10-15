@@ -154,11 +154,20 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
     }
     const galleryImages = parseJsonField(req.body.galleryImages)
     const rawColorImages = parseJsonField(req.body.colorImages)
+    const normalizedColorImages = rawColorImages?.map(item => {
+        if (!item || typeof item.color !== "string") return null
+        const imageUrls = Array.isArray(item.imageUrls)
+            ? item.imageUrls
+            : typeof item.imageUrl === "string"
+                ? [item.imageUrl]
+                : null
+        if (!imageUrls || imageUrls.some(imageUrl => !isValidImageUrl(imageUrl))) return null
+        return { color: item.color.trim(), imageUrls: imageUrls.map(imageUrl => imageUrl.trim()) }
+    })
     if (!galleryImages || !rawColorImages
         || galleryImages.some(imageUrl => !isValidImageUrl(imageUrl))
-        || rawColorImages.some(item => !item || typeof item.color !== "string"
-            || !colors.includes(item.color.trim())
-            || !isValidImageUrl(item.imageUrl))) {
+        || !normalizedColorImages
+        || normalizedColorImages.some(item => !item || !colors.includes(item.color))) {
         return res.status(400).json({
             success: false,
             message: "Gallery and color-specific images must use valid HTTP or HTTPS image URLs."
@@ -168,9 +177,10 @@ module.exports.AddProduct = wrapAsync(async (req, res) => {
     const product = new Product({
         detailUrl,
         galleryImages: galleryImages.map(imageUrl => imageUrl.trim()),
-        colorImages: rawColorImages.map(({ color, imageUrl }) => ({
-            color: color.trim(),
-            imageUrl: imageUrl.trim()
+        colorImages: normalizedColorImages.map(({ color, imageUrls }) => ({
+            color,
+            imageUrls,
+            imageUrl: imageUrls[0]
         })),
         publicId,
         title: {

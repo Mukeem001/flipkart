@@ -14,9 +14,12 @@ const productSchema = new mongoose.Schema({
             type: String,
             required: true
         },
+        imageUrls: {
+            type: [String],
+            default: []
+        },
         imageUrl: {
             type: String,
-            required: true
         }
     }],
     publicId:{

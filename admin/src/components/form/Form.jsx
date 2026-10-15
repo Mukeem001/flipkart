@@ -67,7 +67,30 @@ const Form = () => {
   const updateColorImage = (color, value) => {
     setFormData(current => ({
       ...current,
-      colorImages: { ...current.colorImages, [color]: value },
+      colorImages: {
+        ...current.colorImages,
+        [color]: current.colorImages[color].map((imageUrl, index) => index === value.index ? value.url : imageUrl),
+      },
+    }));
+  };
+
+  const addColorImage = color => {
+    setFormData(current => ({
+      ...current,
+      colorImages: {
+        ...current.colorImages,
+        [color]: [...(current.colorImages[color] || []), ""],
+      },
+    }));
+  };
+
+  const removeColorImage = (color, index) => {
+    setFormData(current => ({
+      ...current,
+      colorImages: {
+        ...current.colorImages,
+        [color]: current.colorImages[color].filter((_, imageIndex) => imageIndex !== index),
+      },
     }));
   };
 
@@ -76,6 +99,7 @@ const Form = () => {
       const selected = current.colors.includes(color);
       const colorImages = { ...current.colorImages };
       if (selected) delete colorImages[color];
+      else colorImages[color] = [""];
       return {
         ...current,
         colors: selected ? current.colors.filter(value => value !== color) : [...current.colors, color],
@@ -100,8 +124,12 @@ const Form = () => {
     data.append("galleryImages", JSON.stringify(formData.galleryImages.map(url => url.trim()).filter(Boolean)));
     data.append("colorImages", JSON.stringify(
       Object.entries(formData.colorImages)
-        .filter(([color, imageUrl]) => formData.colors.includes(color) && imageUrl.trim())
-        .map(([color, imageUrl]) => ({ color, imageUrl: imageUrl.trim() }))
+        .filter(([color]) => formData.colors.includes(color))
+        .map(([color, imageUrls]) => ({
+          color,
+          imageUrls: imageUrls.map(imageUrl => imageUrl.trim()).filter(Boolean),
+        }))
+        .filter(({ imageUrls }) => imageUrls.length > 0)
     ));
     data.append("shorttitle", formData.shorttitle);
     data.append("longtitle", formData.longtitle);
@@ -274,25 +302,39 @@ const Form = () => {
           {formData.colors.length > 0 && <section className="color-image-fields" aria-label="Color-specific product images">
             <div className="image-variants-heading">
               <h3>Images for each color</h3>
-              <p>Optional: a matching image will show when a customer selects that color.</p>
+              <p>Add a main image and optional extra images for each color. The client gallery will only show images for the selected color.</p>
             </div>
             {formData.colors.map(color => (
-              <div className="color-image-field" key={color}>
-                <label htmlFor={`colorImage-${color}`}>
+              <section className="color-image-group" key={color} aria-label={`${color} images`}>
+                <h4>
                   <span className={`color-swatch color-swatch-${color.toLowerCase()}`} />
-                  {color} image URL
-                </label>
-                <input
-                  id={`colorImage-${color}`}
-                  type="url"
-                  value={formData.colorImages[color] || ""}
-                  onChange={event => updateColorImage(color, event.target.value)}
-                  placeholder={`https://example.com/${color.toLowerCase()}-product.jpg`}
-                />
-                {formData.colorImages[color] && (
-                  <img className="variant-image-preview" src={formData.colorImages[color]} alt={`${color} product preview`} />
-                )}
-              </div>
+                  {color}
+                </h4>
+                {(formData.colorImages[color] || []).map((imageUrl, index) => (
+                  <div className="color-image-field" key={`${color}-${index}`}>
+                    <label htmlFor={`colorImage-${color}-${index}`}>
+                      {index === 0 ? "Main image URL" : `Extra image ${index} URL`}
+                    </label>
+                    <input
+                      id={`colorImage-${color}-${index}`}
+                      type="url"
+                      value={imageUrl}
+                      onChange={event => updateColorImage(color, { index, url: event.target.value })}
+                      placeholder={`https://example.com/${color.toLowerCase()}-${index === 0 ? "main" : `view-${index}`}.jpg`}
+                    />
+                    <button
+                      className="remove-image-button"
+                      type="button"
+                      aria-label={`Remove ${color} image ${index + 1}`}
+                      onClick={() => removeColorImage(color, index)}
+                    >Remove</button>
+                    {imageUrl && <img className="variant-image-preview" src={imageUrl} alt={`${color} image preview ${index + 1}`} />}
+                  </div>
+                ))}
+                <button className="add-image-button" type="button" onClick={() => addColorImage(color)}>
+                  + Add {color} image
+                </button>
+              </section>
             ))}
           </section>}
 
