@@ -1,5 +1,17 @@
 const mongoose = require("mongoose")
 
+const deliveryAddressSchema = new mongoose.Schema({
+    fullName: String,
+    phone: String,
+    alternatePhone: String,
+    flat: String,
+    area: String,
+    city: String,
+    state: String,
+    pincode: String,
+    type: String
+}, { _id: false })
+
 const orderSchema = new mongoose.Schema({
 
     userId: {
@@ -11,7 +23,8 @@ const orderSchema = new mongoose.Schema({
     user: {
         name: { type: String, required: true },
         email: { type: String, required: true },
-        mobile: { type: String, required: true }
+        mobile: { type: String, required: true },
+        address: { type: deliveryAddressSchema }
     },
 
     items: [{

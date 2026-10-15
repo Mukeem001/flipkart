@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ArrowDown, ArrowLeft, Search, ShoppingCart } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAppBack } from "../hooks/useAppBack";
 import { fetchProducts } from "../redux/features/ProductSlice";
 import "./css/categories.css";
 import sidebarAppliances from "../categories-image/appliances.webp";
@@ -124,10 +125,10 @@ const sections = [
 ];
 
 function MobileCategoriesView() {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const [activeCategory, setActiveCategory] = useState("For You");
   const { products = [], productsLoaded, loadingProducts } = useSelector((state) => state.products);
+  const goBack = useAppBack('/')
 
   useEffect(() => {
     if (!productsLoaded && !loadingProducts) dispatch(fetchProducts());
@@ -151,7 +152,7 @@ function MobileCategoriesView() {
       <header className="mobile-categories-header">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           aria-label="Go back"
           className="mobile-categories-back-button"
         >

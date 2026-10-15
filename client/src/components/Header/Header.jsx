@@ -51,6 +51,7 @@ import value365Icon from "../../../../assetsicon/percenttag icon.png";
 import value365Text from "../../../../assetsicon/value 365 text icon.png";
 import { fetchProducts } from "../../redux/features/ProductSlice";
 import { bannerData } from "../../constants/Data";
+import { useAppBack } from "../../hooks/useAppBack";
 
 const Header = () => {
 
@@ -204,6 +205,7 @@ export const MobileBottomNav = () => {
 const AccountPageContent = ({ user, openLogin, navigate, logout }) => {
     const showUnavailable = (name) => toast(`${name} is not available yet`)
     const dispatch = useDispatch()
+    const goBack = useAppBack('/')
     const { products = [], productsLoaded, loadingProducts } = useSelector(state => state.products)
 
     useEffect(() => {
@@ -364,7 +366,7 @@ const AccountPageContent = ({ user, openLogin, navigate, logout }) => {
 
     return <main className="mobile-account-page">
         <div className="account-page-heading">
-            <button type="button" aria-label="Go back" onClick={() => navigate(-1)}><img src="/detailpage-icon/top-nav-left-arrow-icon.svg" alt="" /></button>
+            <button type="button" aria-label="Go back" onClick={goBack}><img src="/detailpage-icon/top-nav-left-arrow-icon.svg" alt="" /></button>
             <h1>Account</h1>
         </div>
 

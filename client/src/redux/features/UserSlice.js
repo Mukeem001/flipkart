@@ -108,6 +108,12 @@ const userSlice = createSlice({
             if (action.payload) {
                 localStorage.setItem("flipkart_token", action.payload)
             }
+        },
+        updateDeliveryAddresses(state, action) {
+            if (!state.user) return
+            state.user.addresses = action.payload.addresses
+            state.user.selectedAddressId = action.payload.selectedAddressId
+            localStorage.setItem("flipkart_user", JSON.stringify(state.user))
         }
     },
     extraReducers: (builder) => {
@@ -230,5 +236,5 @@ const userSlice = createSlice({
     }
 })
 
-export const { updateToken } = userSlice.actions
+export const { updateDeliveryAddresses, updateToken } = userSlice.actions
 export default userSlice.reducer

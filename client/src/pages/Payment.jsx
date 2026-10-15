@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { expireUpiPaymentRequest, fetchUpiOptions, SingleOrderApi, startUpiPaymentRequest, toPaymentGateway } from '../service/Api'
+import { useAppBack } from '../hooks/useAppBack'
 import './css/Payment.css'
 
 const readStoredAmount = () => {
@@ -30,6 +31,7 @@ const readStoredAmount = () => {
 const Payment = () => {
     const { id } = useParams()
     const navigate = useNavigate()
+    const goBack = useAppBack(`/checkout/${id}/summary`)
     const location = useLocation()
     const { authenticated } = useSelector(state => state.user)
     const [expandedMethod, setExpandedMethod] = useState('')
@@ -212,7 +214,7 @@ const Payment = () => {
     return (
         <main className="payment-page">
             <header className="payment-header">
-                <button type="button" aria-label="Back to order summary" onClick={() => navigate(`/checkout/${id}/summary`)}>
+                <button type="button" aria-label="Back to order summary" onClick={goBack}>
                     <ArrowLeft />
                 </button>
                 <div className="payment-heading">

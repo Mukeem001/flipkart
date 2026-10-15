@@ -10,6 +10,7 @@ import toast from "react-hot-toast"
 import { useDataContextProvider } from '../context/DataProvider'
 import { fetchProducts } from '../redux/features/ProductSlice'
 import { ArrowLeft, Save, ShoppingCart, Trash2, Zap } from 'lucide-react'
+import { useAppBack } from '../hooks/useAppBack'
 
 const Cart = () => {
 
@@ -17,6 +18,7 @@ const Cart = () => {
   const { user, authenticated } = useSelector(state => state.user)
   const { products = [], productsLoaded, loadingProducts } = useSelector(state => state.products)
   const navigate = useNavigate();
+  const goBack = useAppBack('/')
   const dispatch = useDispatch()
   const { setLoginForm, setCheckoutLogin } = useDataContextProvider()
 
@@ -101,7 +103,7 @@ const Cart = () => {
       <Header />
       <div className="cart-mobile-layout">
         <header className="cart-mobile-heading">
-          <button type="button" aria-label="Go back" onClick={() => navigate(-1)}><ArrowLeft /></button>
+          <button type="button" aria-label="Go back" onClick={goBack}><ArrowLeft /></button>
           <h1>My Cart</h1>
         </header>
         <nav className="cart-mobile-tabs" aria-label="Cart categories">

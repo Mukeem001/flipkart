@@ -3,9 +3,22 @@ import { firebaseSendPhoneOtp, firebaseVerifyPhoneOtp } from "./firebaseAuth";
 
 
 // Order Placement API
-export const placeOrderApi = async (cartItems, totalPrice) => {
-    const res = await axiosInstance.post(`/order`, { cartItems, totalPrice });
+export const placeOrderApi = async (cartItems, totalPrice, addressId) => {
+    const res = await axiosInstance.post(`/order`, { cartItems, totalPrice, addressId });
+    if (!res.data?.orderId) {
+        throw new Error(res.data?.message || 'Order could not be created')
+    }
     return res.data.orderId
+}
+
+export const saveDeliveryAddress = async (address) => {
+    const { data } = await axiosInstance.post('/addresses', address)
+    return data
+}
+
+export const selectDeliveryAddress = async (addressId) => {
+    const { data } = await axiosInstance.patch(`/addresses/${addressId}/select`)
+    return data
 }
 
 // Payment Gateway page

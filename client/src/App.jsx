@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useEffect } from 'react'
 import { fetchMe } from './redux/features/UserSlice'
 import { Toaster } from "react-hot-toast"
+import { AppRouteHistory } from './hooks/useAppBack'
 
 const App = () => {
 
@@ -32,6 +33,7 @@ const App = () => {
   return (
     <>
       <BrowserRouter>
+        <AppRouteHistory />
 
         {loading && <></>}
         {loginform && <LoginSignup />}

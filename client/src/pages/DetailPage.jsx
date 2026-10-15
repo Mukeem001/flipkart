@@ -6,6 +6,7 @@ import { fetchProductDetail, fetchProducts } from '../redux/features/ProductSlic
 import Search from '../components/Header/Search'
 import { addToCart } from '../redux/features/CartSlice'
 import { useDataContextProvider } from '../context/DataProvider'
+import { useAppBack } from '../hooks/useAppBack'
 import { useState } from 'react'
 import toast from "react-hot-toast"
 import { ArrowRight, Banknote, ChevronDown, ChevronRight, ChevronUp, CircleCheck, MapPin, PackageCheck, ShieldCheck, Store, ThumbsDown, ThumbsUp, Truck, X } from 'lucide-react'
@@ -21,10 +22,12 @@ const DetailPage = () => {
     const [highlightsExpanded, setHighlightsExpanded] = useState(true);
     const [allDetailsExpanded, setAllDetailsExpanded] = useState(false);
     const [reviewsExpanded, setReviewsExpanded] = useState(true);
+    const [topbarStuck, setTopbarStuck] = useState(false);
     const similarProductsRef = useRef(null);
     const productListRequestedRef = useRef(false);
 
     const navigate = useNavigate()
+    const goBack = useAppBack('/')
     const dispatch = useDispatch()
 
     const { setLoginForm, setCheckoutLogin } = useDataContextProvider();
@@ -32,6 +35,16 @@ const DetailPage = () => {
     const { id } = useParams();
     const { product, loadingProduct, products, productsLoaded, loadingProducts } = useSelector(state => state.products)
     const { authenticated } = useSelector(state => state.user)
+
+    useEffect(() => {
+        const updateTopbarState = () => {
+            setTopbarStuck(window.scrollY > 8)
+        }
+
+        window.addEventListener('scroll', updateTopbarState, { passive: true })
+        updateTopbarState()
+        return () => window.removeEventListener('scroll', updateTopbarState)
+    }, [])
 
     useEffect(() => {
         dispatch(fetchProductDetail(id))
@@ -161,8 +174,8 @@ const DetailPage = () => {
         <>
             <div className="detail-section mobile-detail-shell">
                 <div className="mobile-detail-page">
-                    <div className="mobile-topbar">
-                        <button className="back-button" type="button" aria-label="Go back" onClick={() => navigate(-1)}>
+                    <div className={`mobile-topbar${topbarStuck ? ' is-stuck' : ''}`}>
+                        <button className="back-button" type="button" aria-label="Go back" onClick={goBack}>
                             <img src={`${svgIconBase}/top-nav-left-arrow-icon.svg`} alt="" />
                         </button>
                         <Search compact />

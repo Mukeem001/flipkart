@@ -157,7 +157,10 @@ module.exports.VerifyOtp = wrapAsync(async (req, res) => {
             _id: existingUser._id,
             email: existingUser.email,
             name: existingUser.name,
-            username: existingUser.username
+            username: existingUser.username,
+            phone: existingUser.phone,
+            addresses: existingUser.addresses,
+            selectedAddressId: existingUser.selectedAddressId
         }
     })
 })

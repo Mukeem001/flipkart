@@ -22,11 +22,24 @@ const finalizeExpiredUpiRequests = async (filter = {}) => {
 
 //Place New Order
 module.exports.order = wrapAsync(async (req, res) => {
-    const { cartItems, totalPrice } = req.body
+    const { cartItems, totalPrice, addressId } = req.body
     const userId = req.user._id;
     const user = await User.findById(userId)
     if (!user) {
-        return res.json({ message: "user not found" })
+        return res.status(404).json({ success: false, message: "User not found." })
+    }
+    if (!Array.isArray(cartItems) || cartItems.length === 0 || !Number.isFinite(Number(totalPrice))) {
+        return res.status(400).json({ success: false, message: "Order items and a valid total price are required." })
+    }
+    const deliveryAddress = addressId
+        ? user.addresses.id(addressId)
+        : user.addresses.id(user.selectedAddressId)
+    if (!deliveryAddress) {
+        return res.status(400).json({ success: false, message: "Please add and select a delivery address before placing your order." })
+    }
+    if (String(user.selectedAddressId) !== String(deliveryAddress._id)) {
+        user.selectedAddressId = deliveryAddress._id
+        await user.save()
     }
     const formattedItems = cartItems.map(item => ({
         productName: item.title.shortTitle,
@@ -39,7 +52,18 @@ module.exports.order = wrapAsync(async (req, res) => {
     const userDetail = {
         name: user.name,
         email: user.email,
-        mobile: user.phone
+        mobile: user.phone,
+        address: {
+            fullName: deliveryAddress.fullName,
+            phone: deliveryAddress.phone,
+            alternatePhone: deliveryAddress.alternatePhone,
+            flat: deliveryAddress.flat,
+            area: deliveryAddress.area,
+            city: deliveryAddress.city,
+            state: deliveryAddress.state,
+            pincode: deliveryAddress.pincode,
+            type: deliveryAddress.type
+        }
     }
 
     const order = new Order({

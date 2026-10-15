@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { ChevronLeft, ChevronRight, CircleCheck, MoreVertical, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { fetchProductDetail } from '../redux/features/ProductSlice'
 import { useDataContextProvider } from '../context/DataProvider'
+import { useAppBack } from '../hooks/useAppBack'
 import './css/AllReviews.css'
 
 const featureFilters = ['Overall', 'Colour', 'Comfort', 'Material Quality', 'Light Weight', 'True to Size']
@@ -12,6 +13,7 @@ const sortFilters = ['Most Helpful', 'Latest', 'Positive', 'Negative']
 const AllReviews = () => {
     const { id } = useParams()
     const navigate = useNavigate()
+    const goBack = useAppBack(`/product/${id}`)
     const dispatch = useDispatch()
     const { setReviewForm } = useDataContextProvider()
     const { product, loadingProduct } = useSelector(state => state.products)
@@ -70,7 +72,7 @@ const AllReviews = () => {
     return (
         <main className="mobile-detail-page all-reviews-page">
             <header className="all-reviews-header">
-                <button type="button" aria-label="Back to product" onClick={() => navigate(`/product/${id}`)}>
+                <button type="button" aria-label="Back to product" onClick={goBack}>
                     <ChevronLeft size={27} />
                 </button>
                 <h1>All Reviews</h1>

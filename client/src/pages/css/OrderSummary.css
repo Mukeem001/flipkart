@@ -141,11 +141,363 @@
   font-size: 14px;
 }
 
-.address-notice {
-  display: block;
-  margin-top: 9px;
-  color: #888;
-  font-size: 11px;
+.checkout-address-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #777;
+  font-size: 13px;
+}
+
+.checkout-address-empty button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid #315cff;
+  border-radius: 6px;
+  background: #fff;
+  color: #315cff;
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.address-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.address-picker-panel {
+  position: relative;
+  display: flex;
+  width: min(100%, 768px);
+  height: 100%;
+  flex-direction: column;
+  padding: max(12px, env(safe-area-inset-top)) 28px max(18px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: #fff;
+  color: #111;
+}
+
+.address-sheet-handle {
+  width: 64px;
+  height: 7px;
+  flex: 0 0 auto;
+  align-self: center;
+  margin-bottom: 30px;
+  border-radius: 10px;
+  background: #ddd;
+}
+
+.address-picker-header {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.address-picker-header h2,
+.address-form-header h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.address-picker-header button,
+.address-form-header button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #303030;
+}
+
+.address-picker-rule {
+  margin: 20px 0 28px;
+  border-top: 2px dashed #ddd;
+}
+
+.address-picker-subheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.address-picker-subheader h3 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.address-picker-subheader button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #2167e8;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.saved-address-list {
+  display: grid;
+  gap: 24px;
+}
+
+.saved-address-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: start;
+  gap: 8px;
+}
+
+.saved-address-choice {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #171717;
+  font: inherit;
+  text-align: left;
+}
+
+.saved-address-choice > svg {
+  margin-top: 4px;
+}
+
+.saved-address-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.saved-address-copy strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+}
+
+.saved-address-copy strong small {
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: #d5edff;
+  color: #145bd7;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.saved-address-copy > span {
+  overflow: hidden;
+  color: #666;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-address-more {
+  margin-top: 4px;
+  color: #222;
+}
+
+.address-list-empty {
+  margin: 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.address-form-overlay {
+  align-items: flex-end;
+}
+
+.address-add-background {
+  position: absolute;
+  inset: 0;
+  padding: max(26px, env(safe-area-inset-top)) 24px;
+  background:
+    linear-gradient(165deg, transparent 25%, rgba(92, 130, 165, 0.18) 25% 42%, transparent 42%),
+    linear-gradient(25deg, #d7e0e7 0 2px, transparent 2px 31%, #d7e0e7 31% 33%, transparent 33% 68%, #d7e0e7 68% 70%, transparent 70%),
+    #e9edf0;
+}
+
+.address-location-search {
+  display: flex;
+  height: 58px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.14);
+  color: #777;
+  font-size: 16px;
+}
+
+.address-form-panel {
+  position: relative;
+  width: min(100%, 768px);
+  max-height: min(88dvh, 820px);
+  overflow-y: auto;
+  border-radius: 22px 22px 0 0;
+  background: #fff;
+  color: #171717;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+.address-form-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 20px;
+  background: #fff;
+}
+
+.address-form-header h2 {
+  min-width: 0;
+  flex: 1;
+  font-size: 22px;
+}
+
+.address-form {
+  display: grid;
+  gap: 15px;
+  padding: 8px 24px 18px;
+}
+
+.address-form > h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.address-form-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff7e8;
+  color: #9a6408;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.address-form-notice svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.address-form > label,
+.address-form-city-row label {
+  display: grid;
+  gap: 6px;
+  color: #777;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.address-form input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  outline: 0;
+  background: #fff;
+  color: #171717;
+  font: inherit;
+  font-size: 16px;
+}
+
+.address-form input:focus {
+  border: 2px solid #2167e8;
+}
+
+.address-form-city-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.address-type-field {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.address-type-field legend {
+  margin-bottom: 9px;
+  color: #777;
+  font-size: 14px;
+}
+
+.address-type-field > div {
+  display: flex;
+  gap: 10px;
+}
+
+.address-type-field button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid #ddd;
+  border-radius: 9px;
+  background: #fff;
+  color: #222;
+  font: inherit;
+}
+
+.address-type-field button.active {
+  border-color: #2167e8;
+  color: #2167e8;
+}
+
+.address-save-button {
+  position: sticky;
+  bottom: 0;
+  min-height: 58px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: #2167e8;
+  color: #fff;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.address-save-button:disabled {
+  opacity: 0.65;
 }
 
 .checkout-product-section {

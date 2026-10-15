@@ -68,9 +68,75 @@ module.exports.getMe = wrapAsync(async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            username: user.username
+            username: user.username,
+            phone: user.phone,
+            addresses: user.addresses,
+            selectedAddressId: user.selectedAddressId
         }
     })
+})
+
+module.exports.addAddress = wrapAsync(async (req, res) => {
+    const { fullName, phone, alternatePhone = "", flat, area, city, state, pincode, type = "Home" } = req.body || {}
+    const requiredValues = [fullName, phone, flat, area, city, state, pincode]
+
+    if (requiredValues.some(value => typeof value !== "string" || !value.trim())) {
+        return res.status(400).json({ success: false, message: "Please complete all required address fields." })
+    }
+
+    if (typeof alternatePhone !== "string" || !/^\d{10}$/.test(phone.trim()) || (alternatePhone && !/^\d{10}$/.test(alternatePhone.trim()))) {
+        return res.status(400).json({ success: false, message: "Enter a valid 10-digit mobile number." })
+    }
+
+    if (!/^\d{6}$/.test(pincode.trim())) {
+        return res.status(400).json({ success: false, message: "Enter a valid 6-digit PIN code." })
+    }
+
+    if (!["Home", "Work"].includes(type)) {
+        return res.status(400).json({ success: false, message: "Address type must be Home or Work." })
+    }
+
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." })
+    }
+
+    const address = user.addresses.create({
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        alternatePhone: alternatePhone.trim(),
+        flat: flat.trim(),
+        area: area.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        pincode: pincode.trim(),
+        type
+    })
+    user.addresses.push(address)
+    user.selectedAddressId = address._id
+    await user.save()
+
+    res.status(201).json({
+        success: true,
+        address: user.addresses.id(address._id),
+        selectedAddressId: user.selectedAddressId
+    })
+})
+
+module.exports.selectAddress = wrapAsync(async (req, res) => {
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." })
+    }
+
+    const address = user.addresses.id(req.params.addressId)
+    if (!address) {
+        return res.status(404).json({ success: false, message: "Saved address not found." })
+    }
+
+    user.selectedAddressId = address._id
+    await user.save()
+    res.status(200).json({ success: true, selectedAddressId: user.selectedAddressId })
 })
 
 //Signup Controller
@@ -130,6 +196,9 @@ module.exports.signup = wrapAsync(async (req, res) => {
         name: savedUser.name,
         email: savedUser.email,
         username: savedUser.username,
+        phone: savedUser.phone,
+        addresses: savedUser.addresses,
+        selectedAddressId: savedUser.selectedAddressId,
     }
 
     res.status(201).json({
@@ -165,6 +234,9 @@ module.exports.login = wrapAsync(async (req, res) => {
         name: existingUser.name,
         email: existingUser.email,
         username: existingUser.username,
+        phone: existingUser.phone,
+        addresses: existingUser.addresses,
+        selectedAddressId: existingUser.selectedAddressId,
     }
 
     const accessToken = createAccessToken(existingUser);
@@ -226,7 +298,10 @@ module.exports.firebasePhoneLogin = wrapAsync(async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            username: user.username
+            username: user.username,
+            phone: user.phone,
+            addresses: user.addresses,
+            selectedAddressId: user.selectedAddressId
         }
     });
 });

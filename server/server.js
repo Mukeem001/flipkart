@@ -83,8 +83,12 @@ app.use("/", upiRouter)
 app.use("/", adminRouter)
 app.use("/", smtpSettingsRouter)
 
-app.use("/", (req, res) => {
+app.get("/", (req, res) => {
     res.send("server running fine")
+})
+
+app.use((req, res) => {
+    res.status(404).json({ success: false, message: "Route not found" })
 })
 
 //Error Handling
@@ -117,17 +121,19 @@ const ensureAdminUser = async () => {
     }
 }
 
-const main = async () => {
+const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URL)
     await migrateSmtpSettingsFromEnv()
     await ensureDemoUser()
     await ensureAdminUser()
     console.log("Connected to database")
-}
-main().catch((err) => {
-    console.error(err)
-})
 
-app.listen(PORT, HOST, () => {
-    console.log(`connected to ${HOST}:${PORT}`)
+    app.listen(PORT, HOST, () => {
+        console.log(`connected to ${HOST}:${PORT}`)
+    })
+}
+
+startServer().catch((err) => {
+    console.error("Server startup failed:", err)
+    process.exitCode = 1
 })
