@@ -411,6 +411,10 @@ The backend only allows these configured origins in production.
 
 The API URL is configured, but the Render service must be live and its Hostinger origins must be allowlisted before browser requests can connect successfully.
 
+#### OTP email on Render Free
+
+Render Free blocks outbound SMTP on ports 25, 465, and 587, so the SMTP settings in Admin Settings cannot deliver OTP emails from a Free web service. Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the Render service environment, using a sender address on a domain verified with Resend, then redeploy. The API key must remain server-side and must never be added to a `VITE_` variable or the client build. When `RESEND_API_KEY` is set, OTP emails use Resend's HTTPS API; otherwise the backend falls back to the existing SMTP settings.
+
 ### Render Backend
 
 The Render service must use the `server` directory as its Root Directory, `npm ci --legacy-peer-deps` as its Build Command, and `npm start` as its Start Command. Do not use `npm start` as the Build Command: it starts the long-running API server, so Render cannot finish the build step. The root-level `render.yaml` records these settings for Render Blueprint deployments.

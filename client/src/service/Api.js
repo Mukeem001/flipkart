@@ -58,7 +58,7 @@ export const expireUpiPaymentRequest = async (orderId) => {
 //Send OTP
 export const SendOtp = async (identifier) => {
     const payload = typeof identifier === 'string' ? { email: identifier } : identifier
-    const res = await axiosInstance.post(`/send-otp`, payload)
+    const res = await axiosInstance.post(`/send-otp`, payload, { timeout: 20000 })
     return res.data.message
 }
 

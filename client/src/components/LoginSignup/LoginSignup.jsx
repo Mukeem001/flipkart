@@ -221,7 +221,6 @@ const LoginSignup = () => {
                 setOtpIdentifier({ ...otpTarget, confirmationResult: firebaseResult.confirmationResult })
                 setOtpDigits(Array(6).fill(''))
                 toast.success('SMS OTP sent via Firebase!')
-                setOtpLoading(false)
                 setOtpCountdown(30)
                 setForm('otp')
                 return
@@ -230,12 +229,15 @@ const LoginSignup = () => {
             setOtpIdentifier(otpTarget)
             setOtpDigits(Array(6).fill(''))
             toast.success(otpTarget.phone ? "Code sent to the email registered with this number" : "OTP sent to your email!")
-            setOtpLoading(false)
             setOtpCountdown(30)
             setForm("otp")
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to send OTP. Try again.")
-            setOtpLoading(false);
+            const message = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
+                ? 'OTP request timed out. Please try again or log in with email and password.'
+                : error.response?.data?.message || error.message || "Failed to send OTP. Try again."
+            toast.error(message)
+        } finally {
+            setOtpLoading(false)
         }
     }
 

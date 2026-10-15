@@ -88,8 +88,9 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
             html: `<h2>Your OTP is ${otp}</h2><p>Valid for 5 minutes</p>`
         });
     } catch (err) {
+        await Otp.deleteMany({ userId: existingUser._id });
         console.error("OTP Delivery Error:", err.message);
-        const status = err.code === "SMTP_NOT_CONFIGURED" ? 503 : 500;
+        const status = err.code === "SMTP_NOT_CONFIGURED" || err.code === "EMAIL_SENDER_NOT_CONFIGURED" ? 503 : 502;
         return res.status(status).json({ success: false, message: err.message || "Failed to send OTP email." });
     }
 
