@@ -99,6 +99,20 @@ export const SaveAdminSmtpSettings = async (settings) => {
     return res.data.settings
 }
 
+export const AdminCorsSettings = async () => {
+    const res = await axios.get(`${URL}/admin/settings/cors`, {
+        headers: getAuthHeaders()
+    })
+    return res.data.origins
+}
+
+export const SaveAdminCorsSettings = async (origins) => {
+    const res = await axios.put(`${URL}/admin/settings/cors`, { origins }, {
+        headers: getAuthHeaders()
+    })
+    return res.data.origins
+}
+
 export const AddAdminProductReview = async (productId, review) => {
     const res = await axios.post(`${URL}/admin/products/${productId}/reviews`, review, {
         headers: getAuthHeaders()

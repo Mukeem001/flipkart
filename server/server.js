@@ -18,6 +18,8 @@ const upiRouter = require("./routes/upiRoute")
 const adminRouter = require("./routes/adminRoute")
 const smtpSettingsRouter = require("./routes/smtpSettingsRoute")
 const { migrateSmtpSettingsFromEnv } = require("./service/smtpSettings")
+const corsSettingsRouter = require("./routes/corsSettingsRoute")
+const { getConfiguredCorsOrigins, loadCorsOrigins } = require("./service/corsSettings")
 const User = require("./models/user")
 
 const DEMO_USER = {
@@ -67,7 +69,15 @@ const allowedOrigins = [
 ].filter(Boolean)
 
 app.use(cors({
-    origin: process.env.NODE_ENV === "production" ? allowedOrigins : true,
+    origin: (origin, callback) => {
+        if (process.env.NODE_ENV !== "production" ||
+            !origin ||
+            allowedOrigins.includes(origin) ||
+            getConfiguredCorsOrigins().includes(origin)) {
+            return callback(null, true)
+        }
+        return callback(null, false)
+    },
     credentials: true
 }));
 app.use(cookieParser())
@@ -82,6 +92,7 @@ app.use("/", OtpRouter)
 app.use("/", upiRouter)
 app.use("/", adminRouter)
 app.use("/", smtpSettingsRouter)
+app.use("/", corsSettingsRouter)
 
 app.get("/", (req, res) => {
     res.send("server running fine")
@@ -124,6 +135,7 @@ const ensureAdminUser = async () => {
 const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URL)
     await migrateSmtpSettingsFromEnv()
+    await loadCorsOrigins()
     await ensureDemoUser()
     await ensureAdminUser()
     console.log("Connected to database")

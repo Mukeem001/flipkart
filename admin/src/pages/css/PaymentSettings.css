@@ -119,6 +119,17 @@
   font-size: 13px;
 }
 
+.payment-settings-section-note {
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.payment-settings-section-note code {
+  color: #344054;
+}
+
 .payment-settings-empty {
   margin: 0;
   padding: 18px 0;
@@ -224,6 +235,39 @@
   font-size: 13px;
 }
 
+.cors-settings-section .payment-settings-list-heading {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cors-settings-origins {
+  display: grid;
+  gap: 10px;
+}
+
+.cors-settings-origin {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e0e4ea;
+  border-radius: 4px;
+  background: #fbfcfd;
+}
+
+.cors-settings-origin label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.cors-settings-origin label > span {
+  color: #566170;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 @media (max-width: 960px) {
   .payment-settings-option {
     grid-template-columns: 90px 1fr 1fr;
@@ -259,6 +303,10 @@
 
   .smtp-settings-form {
     grid-template-columns: 1fr;
+  }
+
+  .cors-settings-section .payment-settings-list-heading {
+    flex-direction: column;
   }
 
   .payment-settings-option .payment-settings-enabled {

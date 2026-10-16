@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AdminSmtpSettings, AdminUpiOptions, SaveAdminSmtpSettings, SaveAdminUpiOptions } from '../service/OrderApi'
+import { AdminCorsSettings, AdminSmtpSettings, AdminUpiOptions, SaveAdminCorsSettings, SaveAdminSmtpSettings, SaveAdminUpiOptions } from '../service/OrderApi'
 import './css/PaymentSettings.css'
 
 const PROVIDERS = [
@@ -23,6 +23,11 @@ const PaymentSettings = () => {
     const [smtpSaving, setSmtpSaving] = useState(false)
     const [smtpError, setSmtpError] = useState('')
     const [smtpMessage, setSmtpMessage] = useState('')
+    const [corsOrigins, setCorsOrigins] = useState([''])
+    const [corsLoading, setCorsLoading] = useState(false)
+    const [corsSaving, setCorsSaving] = useState(false)
+    const [corsError, setCorsError] = useState('')
+    const [corsMessage, setCorsMessage] = useState('')
 
     const loadOptions = async () => {
         setLoading(true)
@@ -53,9 +58,24 @@ const PaymentSettings = () => {
         }
     }
 
+    const loadCorsSettings = async () => {
+        setCorsLoading(true)
+        setCorsError('')
+        setCorsMessage('')
+        try {
+            const origins = await AdminCorsSettings()
+            setCorsOrigins(origins.length ? origins : [''])
+        } catch (requestError) {
+            setCorsError(requestError.response?.data?.message || 'Could not load CORS settings.')
+        } finally {
+            setCorsLoading(false)
+        }
+    }
+
     useEffect(() => {
         loadOptions()
         loadSmtpSettings()
+        loadCorsSettings()
     }, [])
 
     const updateOption = (index, updates) => {
@@ -102,6 +122,25 @@ const PaymentSettings = () => {
         } finally {
             setSmtpSaving(false)
         }
+    }
+
+    const saveCorsSettings = async () => {
+        setCorsSaving(true)
+        setCorsError('')
+        setCorsMessage('')
+        try {
+            const origins = await SaveAdminCorsSettings(corsOrigins.map(origin => origin.trim()).filter(Boolean))
+            setCorsOrigins(origins.length ? origins : [''])
+            setCorsMessage('CORS domains saved and applied to the backend.')
+        } catch (requestError) {
+            setCorsError(requestError.response?.data?.message || 'Could not save CORS settings.')
+        } finally {
+            setCorsSaving(false)
+        }
+    }
+
+    const updateCorsOrigin = (index, value) => {
+        setCorsOrigins(current => current.map((origin, originIndex) => originIndex === index ? value : origin))
     }
 
     return (
@@ -198,6 +237,48 @@ const PaymentSettings = () => {
                 <div className="payment-settings-actions">
                     <span className="smtp-settings-password-status">{smtpPasswordConfigured ? 'Password saved' : 'Password not configured'}</span>
                     <button type="button" onClick={saveSmtpSettings} disabled={smtpSaving || smtpLoading}>{smtpSaving ? 'Saving…' : 'Save SMTP settings'}</button>
+                </div>
+            </section>
+
+            <section className="payment-settings-list-section cors-settings-section">
+                <div className="payment-settings-list-heading">
+                    <div>
+                        <h3>CORS allowed domains</h3>
+                        <p className="payment-settings-section-note">Only listed website origins can call the API from a browser. Changes are saved in the database and applied immediately.</p>
+                    </div>
+                    <button type="button" onClick={loadCorsSettings} disabled={corsLoading}>{corsLoading ? 'Refreshing…' : 'Refresh'}</button>
+                </div>
+                {corsError && <p className="payment-settings-alert error" role="alert">{corsError}</p>}
+                {corsMessage && <p className="payment-settings-alert success" role="status">{corsMessage}</p>}
+                <div className="cors-settings-origins">
+                    {corsOrigins.map((origin, index) => (
+                        <div className="cors-settings-origin" key={`cors-origin-${index}`}>
+                            <label>
+                                <span>Domain {index + 1}</span>
+                                <input
+                                    type="text"
+                                    value={origin}
+                                    onChange={event => updateCorsOrigin(index, event.target.value)}
+                                    placeholder="https://shop.example.com"
+                                    autoComplete="url"
+                                    maxLength={300}
+                                />
+                            </label>
+                            <button
+                                className="payment-settings-remove"
+                                type="button"
+                                onClick={() => setCorsOrigins(current => current.length > 1 ? current.filter((_, originIndex) => originIndex !== index) : [''])}
+                                aria-label={`Remove domain ${index + 1}`}
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                <p className="payment-settings-section-note">Enter an origin such as <code>https://shop.example.com</code>; paths and wildcards are not allowed. Existing CLIENT_URL and ADMIN_URL values remain allowed.</p>
+                <div className="payment-settings-actions">
+                    <button className="secondary" type="button" onClick={() => setCorsOrigins(current => [...current, ''])} disabled={corsOrigins.length >= 100}>Add domain</button>
+                    <button type="button" onClick={saveCorsSettings} disabled={corsSaving || corsLoading}>{corsSaving ? 'Saving…' : 'Save CORS domains'}</button>
                 </div>
             </section>
         </section>
