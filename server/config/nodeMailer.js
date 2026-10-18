@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const { getSmtpSettings } = require("../service/smtpSettings");
 const { assertRecipientAccepted } = require("../service/emailDelivery");
+const { SMTP_TLS_MODE_GUIDANCE } = require("../service/smtpTls");
 
 const sendWithSmtp = async ({ settings, to, subject, html }) => {
     const transporter = nodemailer.createTransport({
@@ -18,6 +19,11 @@ const sendWithSmtp = async ({ settings, to, subject, html }) => {
         const result = await transporter.sendMail({ from: settings.senderEmail, to, subject, html });
         assertRecipientAccepted(result, to)
         return result;
+    } catch (error) {
+        if (typeof error?.message === "string" && /wrong version number|tls_validate_record_header/i.test(error.message)) {
+            throw new Error(`SMTP TLS handshake failed. ${SMTP_TLS_MODE_GUIDANCE}`, { cause: error });
+        }
+        throw error;
     } finally {
         transporter.close();
     }

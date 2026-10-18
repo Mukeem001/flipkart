@@ -113,11 +113,11 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
 
+      - name: Deploy Backend
+        run: curl -s "${{ secrets.RENDER_BACKEND_HOOK }}"
+
       - name: Deploy Client
         run: curl -s "${{ secrets.RENDER_CLIENT_HOOK }}"
 
       - name: Deploy Admin
         run: curl -s "${{ secrets.RENDER_ADMIN_HOOK }}"
-
-      - name: Deploy Backend
-        run: curl -s "${{ secrets.RENDER_BACKEND_HOOK }}"

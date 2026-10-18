@@ -415,6 +415,8 @@ The API URL is configured, but the Render service must be live and its Hostinger
 
 Render Free blocks outbound SMTP on ports 25, 465, and 587, so SMTP settings in **SMTP & CORS Settings** cannot deliver OTP emails from a Free web service. Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the Render service environment, using a sender address on a domain verified with Resend, then redeploy. The API key must remain server-side and must never be added to a `VITE_` variable or the client build. When `RESEND_API_KEY` is set, OTP emails use Resend's HTTPS API; otherwise the backend uses the saved SMTP settings. The saved OTP subject and content template apply to both delivery methods; include `{{otp}}` where the code should appear.
 
+For SMTP providers outside Render Free, use port **465** with SSL/TLS enabled, or port **587** with SSL/TLS disabled (STARTTLS). A mismatch between the port and encryption mode can cause a TLS “wrong version number” error.
+
 ### Render Backend
 
 The Render service must use the `server` directory as its Root Directory, `npm ci --legacy-peer-deps` as its Build Command, and `npm start` as its Start Command. Do not use `npm start` as the Build Command: it starts the long-running API server, so Render cannot finish the build step. The root-level `render.yaml` records these settings for Render Blueprint deployments.

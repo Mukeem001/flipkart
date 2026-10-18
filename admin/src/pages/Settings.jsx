@@ -74,6 +74,15 @@ const Settings = () => {
         setSmtpSettings(current => ({ ...current, [key]: value }))
     }
 
+    const updateSmtpPort = value => {
+        setSmtpSettings(current => ({
+            ...current,
+            port: value,
+            ...(Number(value) === 465 ? { secure: true } : {}),
+            ...(Number(value) === 587 ? { secure: false } : {})
+        }))
+    }
+
     const saveSmtpSettings = async () => {
         setSmtpSaving(true)
         setSmtpError('')
@@ -147,11 +156,11 @@ const Settings = () => {
                     </label>
                     <label>
                         <span>Port</span>
-                        <input type="number" min="1" max="65535" value={smtpSettings.port} onChange={event => updateSmtpSetting('port', event.target.value)} />
+                        <input type="number" min="1" max="65535" value={smtpSettings.port} onChange={event => updateSmtpPort(event.target.value)} />
                     </label>
                     <label className="smtp-settings-toggle">
                         <input type="checkbox" checked={smtpSettings.secure} onChange={event => updateSmtpSetting('secure', event.target.checked)} />
-                        <span>Secure connection</span>
+                        <span>SSL/TLS (port 465; turn off for port 587 / STARTTLS)</span>
                     </label>
                     <label>
                         <span>SMTP username</span>

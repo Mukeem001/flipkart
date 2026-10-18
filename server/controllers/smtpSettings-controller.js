@@ -5,6 +5,7 @@ const {
     DEFAULT_OTP_EMAIL_TEMPLATE
 } = require("../service/otpEmailTemplate")
 const { sendEmailDeliveryTest } = require("../config/nodeMailer")
+const { getSmtpTlsConfigurationError } = require("../service/smtpTls")
 const wrapAsync = require("../utils/wrapAsync")
 
 const defaultSettings = {
@@ -52,6 +53,10 @@ const saveSmtpSettings = wrapAsync(async (req, res) => {
     }
     if (typeof secure !== "boolean") {
         return res.status(400).json({ success: false, message: "Choose whether SMTP uses a secure connection." })
+    }
+    const tlsConfigurationError = getSmtpTlsConfigurationError(parsedPort, secure)
+    if (tlsConfigurationError) {
+        return res.status(400).json({ success: false, message: tlsConfigurationError })
     }
     if (!normalizedUser || normalizedUser.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedSender)) {
         return res.status(400).json({ success: false, message: "Enter a valid SMTP username and sender email." })
