@@ -44,12 +44,12 @@ const smtpSettingsSchema = new mongoose.Schema({
         type: String,
         trim: true,
         maxlength: 200,
-        default: "Flipkart - Verification Code"
+        default: "Your Flip verification code"
     },
     otpEmailTemplate: {
         type: String,
         maxlength: 5000,
-        default: "Your verification code is {{otp}}.\nIt is valid for 5 minutes."
+        default: "Hi,\n\nWe received a request to verify your Flip account.\n\nYour verification code is {{otp}}.\nIt expires in 10 minutes and can only be used once.\n\nIf you did not request this code, you can ignore this email. For your security, do not share this code with anyone.\n\nThanks,\nFlip Support"
     }
 }, { timestamps: true })
 

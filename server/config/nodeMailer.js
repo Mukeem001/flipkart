@@ -3,7 +3,7 @@ const { getSmtpSettings } = require("../service/smtpSettings");
 const { assertRecipientAccepted } = require("../service/emailDelivery");
 const { SMTP_TLS_MODE_GUIDANCE } = require("../service/smtpTls");
 
-const sendWithSmtp = async ({ settings, to, subject, html }) => {
+const sendWithSmtp = async ({ settings, to, subject, html, text }) => {
     const transporter = nodemailer.createTransport({
         host: settings.host,
         port: settings.port,
@@ -16,7 +16,7 @@ const sendWithSmtp = async ({ settings, to, subject, html }) => {
     });
 
     try {
-        const result = await transporter.sendMail({ from: settings.senderEmail, to, subject, html });
+        const result = await transporter.sendMail({ from: settings.senderEmail, to, subject, html, text });
         assertRecipientAccepted(result, to)
         return result;
     } catch (error) {
@@ -29,7 +29,7 @@ const sendWithSmtp = async ({ settings, to, subject, html }) => {
     }
 };
 
-const sendWithResend = async ({ apiKey, from, to, subject, html }) => {
+const sendWithResend = async ({ apiKey, from, to, subject, html, text }) => {
     let response;
     try {
         response = await fetch("https://api.resend.com/emails", {
@@ -38,7 +38,7 @@ const sendWithResend = async ({ apiKey, from, to, subject, html }) => {
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ from, to: [to], subject, html }),
+            body: JSON.stringify({ from, to: [to], subject, html, text }),
             signal: AbortSignal.timeout(15000)
         });
     } catch (error) {
@@ -57,7 +57,7 @@ const sendWithResend = async ({ apiKey, from, to, subject, html }) => {
     return result;
 };
 
-const sendMailWithSmtpSettings = async ({ to, subject, html }) => {
+const sendMailWithSmtpSettings = async ({ to, subject, html, text }) => {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
         const from = process.env.RESEND_FROM_EMAIL;
@@ -66,7 +66,7 @@ const sendMailWithSmtpSettings = async ({ to, subject, html }) => {
             error.code = "EMAIL_SENDER_NOT_CONFIGURED";
             throw error;
         }
-        return sendWithResend({ apiKey: resendApiKey, from, to, subject, html });
+        return sendWithResend({ apiKey: resendApiKey, from, to, subject, html, text });
     }
 
     const settings = await getSmtpSettings();
@@ -76,14 +76,15 @@ const sendMailWithSmtpSettings = async ({ to, subject, html }) => {
         throw error;
     }
 
-    return sendWithSmtp({ settings, to, subject, html });
+    return sendWithSmtp({ settings, to, subject, html, text });
 };
 
 const sendEmailDeliveryTest = async ({ to }) => {
     return sendMailWithSmtpSettings({
         to,
         subject: "Email delivery test",
-        html: "<p>Your configured email delivery provider is working. This is a test email from Flipkart Admin.</p>"
+        text: "Hello,\n\nThis is a test email to confirm that your email delivery settings are working.\n\nYou can ignore this email.",
+        html: "<p>Hello,</p><p>This is a test email to confirm that your email delivery settings are working.</p><p>You can ignore this email.</p>"
     });
 };
 

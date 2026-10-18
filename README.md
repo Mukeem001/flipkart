@@ -417,6 +417,8 @@ Render Free blocks outbound SMTP on ports 25, 465, and 587, so SMTP settings in 
 
 For SMTP providers outside Render Free, use port **465** with SSL/TLS enabled, or port **587** with SSL/TLS disabled (STARTTLS). A mismatch between the port and encryption mode can cause a TLS “wrong version number” error.
 
+OTP emails use a short, security-focused message and include both HTML and plain-text bodies. Codes expire after 10 minutes. Message wording alone cannot guarantee inbox placement: configure SPF and DKIM for the sender domain, publish a DMARC policy, use a verified sender address aligned with that domain, and follow the email provider's deliverability guidance. The SMTP test email uses a neutral subject and body and does not mention the admin panel.
+
 ### Render Backend
 
 The Render service must use the `server` directory as its Root Directory, `npm ci --legacy-peer-deps` as its Build Command, and `npm start` as its Start Command. Do not use `npm start` as the Build Command: it starts the long-running API server, so Render cannot finish the build step. The root-level `render.yaml` records these settings for Render Blueprint deployments.

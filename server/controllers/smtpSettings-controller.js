@@ -2,7 +2,8 @@ const SmtpSettings = require("../models/smtpSettings")
 const { encryptPassword } = require("../service/smtpSettings")
 const {
     DEFAULT_OTP_EMAIL_SUBJECT,
-    DEFAULT_OTP_EMAIL_TEMPLATE
+    DEFAULT_OTP_EMAIL_TEMPLATE,
+    resolveOtpEmailSettings
 } = require("../service/otpEmailTemplate")
 const { sendEmailDeliveryTest } = require("../config/nodeMailer")
 const { getSmtpTlsConfigurationError } = require("../service/smtpTls")
@@ -19,16 +20,19 @@ const defaultSettings = {
     passwordConfigured: false
 }
 
-const publicSettings = (settings) => settings ? ({
-    host: settings.host,
-    port: settings.port,
-    secure: settings.secure,
-    user: settings.user,
-    senderEmail: settings.senderEmail,
-    otpEmailSubject: settings.otpEmailSubject || DEFAULT_OTP_EMAIL_SUBJECT,
-    otpEmailTemplate: settings.otpEmailTemplate || DEFAULT_OTP_EMAIL_TEMPLATE,
-    passwordConfigured: Boolean(settings.passwordEncrypted)
-}) : defaultSettings
+const publicSettings = (settings) => {
+    if (!settings) return defaultSettings
+    const otpEmail = resolveOtpEmailSettings(settings.otpEmailSubject, settings.otpEmailTemplate)
+    return {
+        host: settings.host,
+        port: settings.port,
+        secure: settings.secure,
+        user: settings.user,
+        senderEmail: settings.senderEmail,
+        ...otpEmail,
+        passwordConfigured: Boolean(settings.passwordEncrypted)
+    }
+}
 
 const getSmtpSettings = wrapAsync(async (req, res) => {
     const settings = await SmtpSettings.findOne({ key: "primary" })
@@ -66,12 +70,9 @@ const saveSmtpSettings = wrapAsync(async (req, res) => {
     }
 
     const existing = await SmtpSettings.findOne({ key: "primary" }).select("+passwordEncrypted")
-    const nextOtpSubject = typeof otpEmailSubject === "undefined"
-        ? existing?.otpEmailSubject || DEFAULT_OTP_EMAIL_SUBJECT
-        : normalizedSubject
-    const nextOtpTemplate = typeof otpEmailTemplate === "undefined"
-        ? existing?.otpEmailTemplate || DEFAULT_OTP_EMAIL_TEMPLATE
-        : otpEmailTemplate
+    const resolvedOtpEmail = resolveOtpEmailSettings(existing?.otpEmailSubject, existing?.otpEmailTemplate)
+    const nextOtpSubject = typeof otpEmailSubject === "undefined" ? resolvedOtpEmail.subject : normalizedSubject
+    const nextOtpTemplate = typeof otpEmailTemplate === "undefined" ? resolvedOtpEmail.template : otpEmailTemplate
 
     if (!nextOtpSubject || nextOtpSubject.length > 200 || /[\r\n]/.test(nextOtpSubject)) {
         return res.status(400).json({ success: false, message: "Enter an OTP email subject under 200 characters." })

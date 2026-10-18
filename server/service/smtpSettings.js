@@ -2,7 +2,8 @@ const crypto = require("crypto")
 const SmtpSettings = require("../models/smtpSettings")
 const {
     DEFAULT_OTP_EMAIL_SUBJECT,
-    DEFAULT_OTP_EMAIL_TEMPLATE
+    DEFAULT_OTP_EMAIL_TEMPLATE,
+    resolveOtpEmailSettings
 } = require("./otpEmailTemplate")
 
 const encryptionKey = () => {
@@ -57,10 +58,7 @@ const getOtpEmailSettings = async () => {
         .select("otpEmailSubject otpEmailTemplate")
         .lean()
 
-    return {
-        subject: settings?.otpEmailSubject || DEFAULT_OTP_EMAIL_SUBJECT,
-        template: settings?.otpEmailTemplate || DEFAULT_OTP_EMAIL_TEMPLATE
-    }
+    return resolveOtpEmailSettings(settings?.otpEmailSubject, settings?.otpEmailTemplate)
 }
 
 const migrateSmtpSettingsFromEnv = async () => {

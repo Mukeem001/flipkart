@@ -8,8 +8,8 @@ import {
 } from '../service/OrderApi'
 import './css/PaymentSettings.css'
 
-const DEFAULT_OTP_SUBJECT = 'Flipkart - Verification Code'
-const DEFAULT_OTP_TEMPLATE = 'Your verification code is {{otp}}.\nIt is valid for 5 minutes.'
+const DEFAULT_OTP_SUBJECT = 'Your Flip verification code'
+const DEFAULT_OTP_TEMPLATE = 'Hi,\n\nWe received a request to verify your Flip account.\n\nYour verification code is {{otp}}.\nIt expires in 10 minutes and can only be used once.\n\nIf you did not request this code, you can ignore this email. For your security, do not share this code with anyone.\n\nThanks,\nFlip Support'
 const DEFAULT_SMTP_SETTINGS = {
     host: 'smtp.gmail.com',
     port: 587,

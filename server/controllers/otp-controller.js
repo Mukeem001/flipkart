@@ -5,14 +5,17 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const wrapAsync = require("../utils/wrapAsync");
 const { getOtpEmailSettings } = require("../service/smtpSettings");
-const { renderOtpEmail } = require("../service/otpEmailTemplate");
+const { renderOtpEmail, renderOtpEmailText } = require("../service/otpEmailTemplate");
+
+const OTP_EXPIRY_MS = 10 * 60 * 1000;
 
 const sendOtpEmail = async ({ to, otp }) => {
     const { subject, template } = await getOtpEmailSettings()
     return sendMailWithSmtpSettings({
         to,
         subject,
-        html: renderOtpEmail(template, otp)
+        html: renderOtpEmail(template, otp),
+        text: renderOtpEmailText(template, otp)
     })
 }
 
@@ -37,7 +40,7 @@ module.exports.SendSignupOtp = wrapAsync(async (req, res) => {
         email: normalizedEmail,
         purpose: "signup",
         otpHash,
-        expiresAt: Date.now() + 5 * 60 * 1000
+        expiresAt: Date.now() + OTP_EXPIRY_MS
     });
 
     try {
@@ -85,7 +88,7 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
     await Otp.create({
         userId: existingUser._id,
         otpHash,
-        expiresAt: Date.now() + 5 * 60 * 1000
+        expiresAt: Date.now() + OTP_EXPIRY_MS
     });
 
     try {
