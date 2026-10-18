@@ -1,13 +1,17 @@
 # ---------------- Development Stage ----------------
 FROM node:20-alpine AS development
 
-WORKDIR /app
+WORKDIR /app/client
 
-COPY package*.json .npmrc ./
+COPY client/package*.json client/.npmrc ./
 
 RUN npm ci --legacy-peer-deps
 
-COPY . .
+COPY client/ ./
+COPY assetsicon/ /app/assetsicon/
+COPY backgroung-images/ /app/backgroung-images/
+COPY flipkart-icon-svg/ /app/flipkart-icon-svg/
+COPY sliicons/ /app/sliicons/
 
 EXPOSE 5173
 
@@ -32,7 +36,7 @@ RUN npm run build
 # ---------- Production Stage ----------
 FROM nginx:alpine AS production
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/client/dist /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

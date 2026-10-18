@@ -79,7 +79,7 @@ jobs:
       - name: Build & Push Client
         uses: docker/build-push-action@v6
         with:
-          context: ./client
+          context: .
           file: ./client/Dockerfile
           target: production
           push: true

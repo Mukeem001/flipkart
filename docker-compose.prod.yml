@@ -21,7 +21,7 @@ services:
 
   client:
     build:
-      context: ./client
+      context: .
       target: production
 
     container_name: flipkart-client

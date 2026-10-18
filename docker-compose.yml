@@ -29,7 +29,7 @@ services:
 # Client---------------------------->
   client:
     build:
-      context: ./client
+      context: .
       target: development
 
     container_name: flipkart-client
@@ -41,8 +41,8 @@ services:
       VITE_API_URL: http://localhost:5000
 
     volumes:
-      - ./client:/app
-      - /app/node_modules
+      - ./client:/app/client
+      - /app/client/node_modules
 
     depends_on:
       - backend
