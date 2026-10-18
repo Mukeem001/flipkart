@@ -4,6 +4,17 @@ const crypto = require("crypto");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const wrapAsync = require("../utils/wrapAsync");
+const { getOtpEmailSettings } = require("../service/smtpSettings");
+const { renderOtpEmail } = require("../service/otpEmailTemplate");
+
+const sendOtpEmail = async ({ to, otp }) => {
+    const { subject, template } = await getOtpEmailSettings()
+    return sendMailWithSmtpSettings({
+        to,
+        subject,
+        html: renderOtpEmail(template, otp)
+    })
+}
 
 module.exports.SendSignupOtp = wrapAsync(async (req, res) => {
     const { email, username, phone } = req.body;
@@ -30,11 +41,7 @@ module.exports.SendSignupOtp = wrapAsync(async (req, res) => {
     });
 
     try {
-        await sendMailWithSmtpSettings({
-            to: normalizedEmail,
-            subject: "Flipkart - Verify your email",
-            html: `<h2>Your verification code is ${otp}</h2><p>Use it to complete signup. It is valid for 5 minutes.</p>`
-        });
+        await sendOtpEmail({ to: normalizedEmail, otp });
     } catch (error) {
         await Otp.deleteOne({ _id: otpRecord._id });
         console.error("Signup OTP Delivery Error:", error.message);
@@ -82,11 +89,7 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
     });
 
     try {
-        await sendMailWithSmtpSettings({
-            to: existingUser.email,
-            subject: "Flipkart - Login OTP",
-            html: `<h2>Your OTP is ${otp}</h2><p>Valid for 5 minutes</p>`
-        });
+        await sendOtpEmail({ to: existingUser.email, otp });
     } catch (err) {
         await Otp.deleteMany({ userId: existingUser._id });
         console.error("OTP Delivery Error:", err.message);

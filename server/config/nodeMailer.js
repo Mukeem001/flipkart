@@ -1,6 +1,25 @@
 const nodemailer = require("nodemailer");
 const { getSmtpSettings } = require("../service/smtpSettings");
 
+const sendWithSmtp = async ({ settings, to, subject, html }) => {
+    const transporter = nodemailer.createTransport({
+        host: settings.host,
+        port: settings.port,
+        secure: settings.secure,
+        auth: { user: settings.user, pass: settings.password },
+        family: 4,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000
+    });
+
+    try {
+        return await transporter.sendMail({ from: settings.senderEmail, to, subject, html });
+    } finally {
+        transporter.close();
+    }
+};
+
 const sendWithResend = async ({ apiKey, from, to, subject, html }) => {
     let response;
     try {
@@ -48,22 +67,23 @@ const sendMailWithSmtpSettings = async ({ to, subject, html }) => {
         throw error;
     }
 
-    const transporter = nodemailer.createTransport({
-        host: settings.host,
-        port: settings.port,
-        secure: settings.secure,
-        auth: { user: settings.user, pass: settings.password },
-        family: 4,
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000
-    });
-
-    try {
-        return await transporter.sendMail({ from: settings.senderEmail, to, subject, html });
-    } finally {
-        transporter.close();
-    }
+    return sendWithSmtp({ settings, to, subject, html });
 };
 
-module.exports = { sendMailWithSmtpSettings };
+const sendSmtpTestEmail = async ({ to }) => {
+    const settings = await getSmtpSettings();
+    if (!settings) {
+        const error = new Error("SMTP settings are not configured in Admin Settings.");
+        error.code = "SMTP_NOT_CONFIGURED";
+        throw error;
+    }
+
+    return sendWithSmtp({
+        settings,
+        to,
+        subject: "SMTP settings test",
+        html: "<p>Your SMTP settings are working. This is a test email from Flipkart Admin.</p>"
+    });
+};
+
+module.exports = { sendMailWithSmtpSettings, sendSmtpTestEmail };

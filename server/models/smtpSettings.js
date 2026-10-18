@@ -39,6 +39,17 @@ const smtpSettingsSchema = new mongoose.Schema({
         trim: true,
         lowercase: true,
         maxlength: 254
+    },
+    otpEmailSubject: {
+        type: String,
+        trim: true,
+        maxlength: 200,
+        default: "Flipkart - Verification Code"
+    },
+    otpEmailTemplate: {
+        type: String,
+        maxlength: 5000,
+        default: "Your verification code is {{otp}}.\nIt is valid for 5 minutes."
     }
 }, { timestamps: true })
 

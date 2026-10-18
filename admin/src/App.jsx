@@ -7,6 +7,7 @@ import EditProduct from './pages/EditProduct';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
 import PaymentSettings from './pages/PaymentSettings';
+import Settings from './pages/Settings';
 import Users from './pages/Users';
 import Reviews from './pages/Reviews';
 import Login from './pages/Login';
@@ -34,6 +35,7 @@ const App = () => {
             <Route path='/orders' element={<Orders />} />
             <Route path='/users' element={<Users />} />
             <Route path='/payment-settings' element={<PaymentSettings />} />
+            <Route path='/system-settings' element={<Settings />} />
             <Route path='/reviews' element={<Reviews />} />
           </Route>
         </Routes>

@@ -99,6 +99,13 @@ export const SaveAdminSmtpSettings = async (settings) => {
     return res.data.settings
 }
 
+export const SendAdminSmtpTestEmail = async (email) => {
+    const res = await axios.post(`${URL}/admin/settings/smtp/test`, { email }, {
+        headers: getAuthHeaders()
+    })
+    return res.data.message
+}
+
 export const AdminCorsSettings = async () => {
     const res = await axios.get(`${URL}/admin/settings/cors`, {
         headers: getAuthHeaders()

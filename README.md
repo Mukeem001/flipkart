@@ -164,6 +164,7 @@ flipkart-clone/
 | **Order Management** | View all orders with server-side pagination |
 | **Order Status Control** | Update status: Pending → Delivered or Rejected in real time |
 | **UPI Payment Settings** | Manage enabled UPI apps and merchant IDs from the admin panel |
+| **System Settings** | Configure SMTP, send a test email, customize OTP email content, and manage CORS origins |
 | **Paginated Tables** | Efficient navigation across large datasets |
 
 </details>
@@ -373,10 +374,9 @@ RAZORPAY_KEY_ID=your_razorpay_key
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 CLIENT_URL=http://localhost:5173
 ADMIN_URL=http://localhost:5174
-ADMIN_API_KEY=generate_a_long_random_secret
 ```
 
-Enter the same `ADMIN_API_KEY` in **Payment Settings** in the admin panel to manage UPI apps and IDs. Keep this key only on the server; do not add it to a `VITE_` variable or commit the real value.
+Use **Payment Settings** in the admin panel to manage UPI apps and IDs. SMTP, OTP email content, test delivery, and CORS origins are managed separately under **SMTP & CORS Settings**. SMTP credentials are stored in the database with the password encrypted; do not expose them in client-side configuration.
 
 </details>
 
@@ -413,7 +413,7 @@ The API URL is configured, but the Render service must be live and its Hostinger
 
 #### OTP email on Render Free
 
-Render Free blocks outbound SMTP on ports 25, 465, and 587, so the SMTP settings in Admin Settings cannot deliver OTP emails from a Free web service. Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the Render service environment, using a sender address on a domain verified with Resend, then redeploy. The API key must remain server-side and must never be added to a `VITE_` variable or the client build. When `RESEND_API_KEY` is set, OTP emails use Resend's HTTPS API; otherwise the backend falls back to the existing SMTP settings.
+Render Free blocks outbound SMTP on ports 25, 465, and 587, so SMTP settings in **SMTP & CORS Settings** cannot deliver OTP emails from a Free web service. Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the Render service environment, using a sender address on a domain verified with Resend, then redeploy. The API key must remain server-side and must never be added to a `VITE_` variable or the client build. When `RESEND_API_KEY` is set, OTP emails use Resend's HTTPS API; otherwise the backend uses the saved SMTP settings. The saved OTP subject and content template apply to both delivery methods; include `{{otp}}` where the code should appear.
 
 ### Render Backend
 

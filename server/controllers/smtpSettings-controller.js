@@ -1,5 +1,10 @@
 const SmtpSettings = require("../models/smtpSettings")
 const { encryptPassword } = require("../service/smtpSettings")
+const {
+    DEFAULT_OTP_EMAIL_SUBJECT,
+    DEFAULT_OTP_EMAIL_TEMPLATE
+} = require("../service/otpEmailTemplate")
+const { sendSmtpTestEmail } = require("../config/nodeMailer")
 const wrapAsync = require("../utils/wrapAsync")
 
 const defaultSettings = {
@@ -8,6 +13,8 @@ const defaultSettings = {
     secure: false,
     user: "",
     senderEmail: "",
+    otpEmailSubject: DEFAULT_OTP_EMAIL_SUBJECT,
+    otpEmailTemplate: DEFAULT_OTP_EMAIL_TEMPLATE,
     passwordConfigured: false
 }
 
@@ -17,21 +24,24 @@ const publicSettings = (settings) => settings ? ({
     secure: settings.secure,
     user: settings.user,
     senderEmail: settings.senderEmail,
+    otpEmailSubject: settings.otpEmailSubject || DEFAULT_OTP_EMAIL_SUBJECT,
+    otpEmailTemplate: settings.otpEmailTemplate || DEFAULT_OTP_EMAIL_TEMPLATE,
     passwordConfigured: Boolean(settings.passwordEncrypted)
 }) : defaultSettings
 
 const getSmtpSettings = wrapAsync(async (req, res) => {
     const settings = await SmtpSettings.findOne({ key: "primary" })
-        .select("host port secure user senderEmail +passwordEncrypted")
+        .select("host port secure user senderEmail otpEmailSubject otpEmailTemplate +passwordEncrypted")
         .lean()
     return res.status(200).json({ settings: publicSettings(settings) })
 })
 
 const saveSmtpSettings = wrapAsync(async (req, res) => {
-    const { host, port, secure, user, password, senderEmail } = req.body || {}
+    const { host, port, secure, user, password, senderEmail, otpEmailSubject, otpEmailTemplate } = req.body || {}
     const normalizedHost = typeof host === "string" ? host.trim() : ""
     const normalizedUser = typeof user === "string" ? user.trim() : ""
     const normalizedSender = typeof senderEmail === "string" ? senderEmail.trim().toLowerCase() : ""
+    const normalizedSubject = typeof otpEmailSubject === "string" ? otpEmailSubject.trim() : ""
     const parsedPort = Number(port)
 
     if (!normalizedHost || normalizedHost.length > 255 || !/^[a-z0-9.-]+$/i.test(normalizedHost)) {
@@ -51,6 +61,21 @@ const saveSmtpSettings = wrapAsync(async (req, res) => {
     }
 
     const existing = await SmtpSettings.findOne({ key: "primary" }).select("+passwordEncrypted")
+    const nextOtpSubject = typeof otpEmailSubject === "undefined"
+        ? existing?.otpEmailSubject || DEFAULT_OTP_EMAIL_SUBJECT
+        : normalizedSubject
+    const nextOtpTemplate = typeof otpEmailTemplate === "undefined"
+        ? existing?.otpEmailTemplate || DEFAULT_OTP_EMAIL_TEMPLATE
+        : otpEmailTemplate
+
+    if (!nextOtpSubject || nextOtpSubject.length > 200 || /[\r\n]/.test(nextOtpSubject)) {
+        return res.status(400).json({ success: false, message: "Enter an OTP email subject under 200 characters." })
+    }
+    if (typeof nextOtpTemplate !== "string" || !nextOtpTemplate.trim() ||
+        nextOtpTemplate.length > 5000 || !nextOtpTemplate.includes("{{otp}}")) {
+        return res.status(400).json({ success: false, message: "OTP email content must be under 5000 characters and include {{otp}}." })
+    }
+
     const nextPassword = password ? encryptPassword(password) : existing?.passwordEncrypted
     if (!nextPassword) {
         return res.status(400).json({ success: false, message: "Enter the SMTP password to configure mail delivery." })
@@ -65,13 +90,33 @@ const saveSmtpSettings = wrapAsync(async (req, res) => {
                 secure,
                 user: normalizedUser,
                 passwordEncrypted: nextPassword,
-                senderEmail: normalizedSender
+                senderEmail: normalizedSender,
+                otpEmailSubject: nextOtpSubject,
+                otpEmailTemplate: nextOtpTemplate
             }
         },
         { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
-    ).select("host port secure user senderEmail +passwordEncrypted").lean()
+    ).select("host port secure user senderEmail otpEmailSubject otpEmailTemplate +passwordEncrypted").lean()
 
     return res.status(200).json({ success: true, settings: publicSettings(settings) })
 })
 
-module.exports = { getSmtpSettings, saveSmtpSettings }
+const sendTestEmail = wrapAsync(async (req, res) => {
+    const { email } = req.body || {}
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : ""
+    if (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return res.status(400).json({ success: false, message: "Enter a valid test recipient email address." })
+    }
+
+    try {
+        await sendSmtpTestEmail({ to: normalizedEmail })
+    } catch (error) {
+        console.error("SMTP Test Email Error:", error.message)
+        const status = error.code === "SMTP_NOT_CONFIGURED" ? 503 : 502
+        return res.status(status).json({ success: false, message: error.message || "Could not send the SMTP test email." })
+    }
+
+    return res.status(200).json({ success: true, message: `Test email sent to ${normalizedEmail}.` })
+})
+
+module.exports = { getSmtpSettings, saveSmtpSettings, sendTestEmail }

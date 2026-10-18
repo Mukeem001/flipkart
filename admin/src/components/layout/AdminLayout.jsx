@@ -8,7 +8,8 @@ const pageTitles = {
     '/products': 'Products',
     '/add-products': 'Add Product',
     '/orders': 'Orders',
-    '/payment-settings': 'Payment Settings'
+    '/payment-settings': 'Payment Settings',
+    '/system-settings': 'SMTP & CORS Settings'
 }
 
 const AdminLayout = () => {

@@ -52,7 +52,8 @@
 }
 
 .payment-settings-page input,
-.payment-settings-page select {
+.payment-settings-page select,
+.payment-settings-page textarea {
   min-width: 0;
   min-height: 38px;
   padding: 7px 10px;
@@ -215,6 +216,53 @@
   font-weight: 600;
 }
 
+.smtp-settings-template {
+  grid-column: 1 / -1;
+}
+
+.smtp-settings-template textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.smtp-settings-template small {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.smtp-test-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e4ea;
+}
+
+.smtp-test-section h4 {
+  margin: 0;
+  color: #1d2734;
+  font-size: 15px;
+}
+
+.smtp-test-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  max-width: 680px;
+  margin-top: 12px;
+}
+
+.smtp-test-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.smtp-test-form label > span {
+  color: #566170;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .smtp-settings-form .smtp-settings-toggle {
   display: flex;
   align-items: center;
@@ -302,6 +350,14 @@
   }
 
   .smtp-settings-form {
+    grid-template-columns: 1fr;
+  }
+
+  .smtp-settings-template {
+    grid-column: auto;
+  }
+
+  .smtp-test-form {
     grid-template-columns: 1fr;
   }
 

@@ -8,6 +8,7 @@ const navigation = [
     { label: 'Orders', path: '/orders', icon: 'fa-receipt' },
     { label: 'Reviews', path: '/reviews', icon: 'fa-star' },
     { label: 'Payment Settings', path: '/payment-settings', icon: 'fa-wallet' },
+    { label: 'SMTP & CORS Settings', path: '/system-settings', icon: 'fa-gear' },
 ]
 
 const Sidebar = ({ open, onClose }) => {

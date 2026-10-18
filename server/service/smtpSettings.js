@@ -1,5 +1,9 @@
 const crypto = require("crypto")
 const SmtpSettings = require("../models/smtpSettings")
+const {
+    DEFAULT_OTP_EMAIL_SUBJECT,
+    DEFAULT_OTP_EMAIL_TEMPLATE
+} = require("./otpEmailTemplate")
 
 const encryptionKey = () => {
     if (!process.env.ACCESS_TOKEN_SECRET) {
@@ -48,6 +52,17 @@ const getSmtpSettings = async () => {
     }
 }
 
+const getOtpEmailSettings = async () => {
+    const settings = await SmtpSettings.findOne({ key: "primary" })
+        .select("otpEmailSubject otpEmailTemplate")
+        .lean()
+
+    return {
+        subject: settings?.otpEmailSubject || DEFAULT_OTP_EMAIL_SUBJECT,
+        template: settings?.otpEmailTemplate || DEFAULT_OTP_EMAIL_TEMPLATE
+    }
+}
+
 const migrateSmtpSettingsFromEnv = async () => {
     const existing = await SmtpSettings.findOne({ key: "primary" }).select("_id").lean()
     const { SMTP_HOST: host, SMTP_USER: user, SMTP_PASS: password, SENDER_EMAIL: senderEmail } = process.env
@@ -68,4 +83,4 @@ const migrateSmtpSettingsFromEnv = async () => {
     return true
 }
 
-module.exports = { decryptPassword, encryptPassword, getSmtpSettings, migrateSmtpSettingsFromEnv }
+module.exports = { decryptPassword, encryptPassword, getOtpEmailSettings, getSmtpSettings, migrateSmtpSettingsFromEnv }
