@@ -16,7 +16,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: abhaythakur0o6/flipkart-clone
+  IMAGE_PREFIX: mukeem001/flipkart-clone
 
 jobs:
 
