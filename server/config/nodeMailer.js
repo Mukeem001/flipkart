@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const { getSmtpSettings } = require("../service/smtpSettings");
+const { assertRecipientAccepted } = require("../service/emailDelivery");
 
 const sendWithSmtp = async ({ settings, to, subject, html }) => {
     const transporter = nodemailer.createTransport({
@@ -14,7 +15,9 @@ const sendWithSmtp = async ({ settings, to, subject, html }) => {
     });
 
     try {
-        return await transporter.sendMail({ from: settings.senderEmail, to, subject, html });
+        const result = await transporter.sendMail({ from: settings.senderEmail, to, subject, html });
+        assertRecipientAccepted(result, to)
+        return result;
     } finally {
         transporter.close();
     }
@@ -70,20 +73,12 @@ const sendMailWithSmtpSettings = async ({ to, subject, html }) => {
     return sendWithSmtp({ settings, to, subject, html });
 };
 
-const sendSmtpTestEmail = async ({ to }) => {
-    const settings = await getSmtpSettings();
-    if (!settings) {
-        const error = new Error("SMTP settings are not configured in Admin Settings.");
-        error.code = "SMTP_NOT_CONFIGURED";
-        throw error;
-    }
-
-    return sendWithSmtp({
-        settings,
+const sendEmailDeliveryTest = async ({ to }) => {
+    return sendMailWithSmtpSettings({
         to,
-        subject: "SMTP settings test",
-        html: "<p>Your SMTP settings are working. This is a test email from Flipkart Admin.</p>"
+        subject: "Email delivery test",
+        html: "<p>Your configured email delivery provider is working. This is a test email from Flipkart Admin.</p>"
     });
 };
 
-module.exports = { sendMailWithSmtpSettings, sendSmtpTestEmail };
+module.exports = { sendEmailDeliveryTest, sendMailWithSmtpSettings };

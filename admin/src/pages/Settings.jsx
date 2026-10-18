@@ -92,15 +92,20 @@ const Settings = () => {
 
     const sendTestEmail = async () => {
         setSmtpTesting(true)
+        setSmtpSaving(true)
         setSmtpError('')
         setSmtpMessage('')
         try {
+            const settings = await SaveAdminSmtpSettings(smtpSettings)
+            setSmtpSettings({ ...DEFAULT_SMTP_SETTINGS, ...settings, password: '' })
+            setSmtpPasswordConfigured(settings.passwordConfigured)
             const message = await SendAdminSmtpTestEmail(testEmail)
             setSmtpMessage(message)
         } catch (requestError) {
-            setSmtpError(requestError.response?.data?.message || 'Could not send the SMTP test email.')
+            setSmtpError(requestError.response?.data?.message || 'Could not save settings or send the test email.')
         } finally {
             setSmtpTesting(false)
+            setSmtpSaving(false)
         }
     }
 
@@ -172,12 +177,12 @@ const Settings = () => {
                 </div>
                 <div className="payment-settings-actions">
                     <span className="smtp-settings-password-status">{smtpPasswordConfigured ? 'Password saved' : 'Password not configured'}</span>
-                    <button type="button" onClick={saveSmtpSettings} disabled={smtpSaving || smtpLoading}>{smtpSaving ? 'Saving…' : 'Save SMTP settings'}</button>
+                    <button type="button" onClick={saveSmtpSettings} disabled={smtpSaving || smtpLoading || smtpTesting}>{smtpSaving ? 'Saving…' : 'Save SMTP settings'}</button>
                 </div>
 
                 <div className="smtp-test-section">
                     <h4>Test email delivery</h4>
-                    <p className="payment-settings-section-note">Save the SMTP settings first, then send a test email to verify that SMTP connection.</p>
+                    <p className="payment-settings-section-note">This saves the current settings and sends a test using the same email provider used for login and signup OTPs.</p>
                     <div className="smtp-test-form">
                         <label>
                             <span>Recipient email</span>

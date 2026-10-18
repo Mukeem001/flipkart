@@ -376,7 +376,7 @@ CLIENT_URL=http://localhost:5173
 ADMIN_URL=http://localhost:5174
 ```
 
-Use **Payment Settings** in the admin panel to manage UPI apps and IDs. SMTP, OTP email content, test delivery, and CORS origins are managed separately under **SMTP & CORS Settings**. SMTP credentials are stored in the database with the password encrypted; do not expose them in client-side configuration.
+Use **Payment Settings** in the admin panel to manage UPI apps and IDs. SMTP, OTP email content, test delivery, and CORS origins are managed separately under **SMTP & CORS Settings**. The test button saves the current SMTP form and sends through the same configured provider as OTP mail; when Resend is configured in the server environment, it tests Resend instead of SMTP. SMTP credentials are stored in the database with the password encrypted; do not expose them in client-side configuration.
 
 </details>
 

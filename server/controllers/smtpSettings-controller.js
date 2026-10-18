@@ -4,7 +4,7 @@ const {
     DEFAULT_OTP_EMAIL_SUBJECT,
     DEFAULT_OTP_EMAIL_TEMPLATE
 } = require("../service/otpEmailTemplate")
-const { sendSmtpTestEmail } = require("../config/nodeMailer")
+const { sendEmailDeliveryTest } = require("../config/nodeMailer")
 const wrapAsync = require("../utils/wrapAsync")
 
 const defaultSettings = {
@@ -109,11 +109,11 @@ const sendTestEmail = wrapAsync(async (req, res) => {
     }
 
     try {
-        await sendSmtpTestEmail({ to: normalizedEmail })
+        await sendEmailDeliveryTest({ to: normalizedEmail })
     } catch (error) {
-        console.error("SMTP Test Email Error:", error.message)
+        console.error("Email Delivery Test Error:", error.message)
         const status = error.code === "SMTP_NOT_CONFIGURED" ? 503 : 502
-        return res.status(status).json({ success: false, message: error.message || "Could not send the SMTP test email." })
+        return res.status(status).json({ success: false, message: error.message || "Could not send the test email." })
     }
 
     return res.status(200).json({ success: true, message: `Test email sent to ${normalizedEmail}.` })

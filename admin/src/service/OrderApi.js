@@ -101,7 +101,8 @@ export const SaveAdminSmtpSettings = async (settings) => {
 
 export const SendAdminSmtpTestEmail = async (email) => {
     const res = await axios.post(`${URL}/admin/settings/smtp/test`, { email }, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        timeout: 30000
     })
     return res.data.message
 }
