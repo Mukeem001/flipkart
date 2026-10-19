@@ -1,10 +1,10 @@
 const User = require("../models/user")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
 const Otp = require("../models/otp");
 const wrapAsync = require("../utils/wrapAsync");
 const { verifyFirebaseIdToken } = require("../service/firebaseAdmin");
+const { isOtpValid } = require("../service/otpVerification");
 
 //Helper Functions
 const createAccessToken = (user) => {
@@ -156,10 +156,7 @@ module.exports.signup = wrapAsync(async (req, res) => {
         return res.status(400).json({ message: "Signup OTP expired or not found. Request a new code." });
     }
 
-    const suppliedOtpHash = crypto.createHash("sha256").update(String(otp)).digest("hex");
-    const storedHash = Buffer.from(otpRecord.otpHash, "hex");
-    const suppliedHash = Buffer.from(suppliedOtpHash, "hex");
-    if (storedHash.length !== suppliedHash.length || !crypto.timingSafeEqual(storedHash, suppliedHash)) {
+    if (!isOtpValid(otp, otpRecord.otpHash)) {
         return res.status(400).json({ message: "Incorrect signup OTP" });
     }
 

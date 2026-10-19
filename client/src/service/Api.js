@@ -59,7 +59,7 @@ export const expireUpiPaymentRequest = async (orderId) => {
 export const SendOtp = async (identifier) => {
     const payload = typeof identifier === 'string' ? { email: identifier } : identifier
     const res = await axiosInstance.post(`/send-otp`, payload, { timeout: 20000 })
-    return res.data.message
+    return res.data
 }
 
 export const SearchProducts = async (query) => {
@@ -72,13 +72,18 @@ export const SendSignupOtp = async ({ email, username, phone }) => {
     return data.message
 }
 
+export const VerifySignupOtp = async (email, otp) => {
+    const { data } = await axiosInstance.post('/verify-otp', { email, otp })
+    return data
+}
+
 export const SendFirebaseOtp = async (identifier) => {
     const firebaseEnabled = !!import.meta.env.VITE_FIREBASE_API_KEY
     const payload = typeof identifier === 'string' ? { email: identifier } : identifier
 
     if (!firebaseEnabled) {
-        await SendOtp(payload)
-        return { mode: 'backend' }
+        const response = await SendOtp(payload)
+        return { mode: 'backend', purpose: response.purpose }
     }
 
     if (payload.phone) {
@@ -86,8 +91,8 @@ export const SendFirebaseOtp = async (identifier) => {
         return { mode: 'phone', confirmationResult: confirmation }
     }
 
-    await SendOtp(payload)
-    return { mode: 'backend' }
+    const response = await SendOtp(payload)
+    return { mode: 'backend', purpose: response.purpose }
 }
 
 export const VerifyFirebaseOtp = async (confirmationResult, otp) => {

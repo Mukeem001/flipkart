@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const wrapAsync = require("../utils/wrapAsync");
 const { getOtpEmailSettings } = require("../service/smtpSettings");
 const { renderOtpEmail, renderOtpEmailText } = require("../service/otpEmailTemplate");
+const { hashOtp, isOtpValid } = require("../service/otpVerification");
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 
@@ -17,6 +18,24 @@ const sendOtpEmail = async ({ to, otp }) => {
         html: renderOtpEmail(template, otp),
         text: renderOtpEmailText(template, otp)
     })
+}
+
+const createAndSendSignupOtp = async (email) => {
+    await Otp.deleteMany({ email, purpose: "signup" });
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const otpRecord = await Otp.create({
+        email,
+        purpose: "signup",
+        otpHash: hashOtp(otp),
+        expiresAt: Date.now() + OTP_EXPIRY_MS
+    });
+
+    try {
+        await sendOtpEmail({ to: email, otp });
+    } catch (error) {
+        await Otp.deleteOne({ _id: otpRecord._id });
+        throw error;
+    }
 }
 
 module.exports.SendSignupOtp = wrapAsync(async (req, res) => {
@@ -33,22 +52,11 @@ module.exports.SendSignupOtp = wrapAsync(async (req, res) => {
         return res.status(409).json({ success: false, message: "Email, username, or phone is already registered" });
     }
 
-    await Otp.deleteMany({ email: normalizedEmail, purpose: "signup" });
-    const otp = crypto.randomInt(100000, 1000000).toString();
-    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
-    const otpRecord = await Otp.create({
-        email: normalizedEmail,
-        purpose: "signup",
-        otpHash,
-        expiresAt: Date.now() + OTP_EXPIRY_MS
-    });
-
     try {
-        await sendOtpEmail({ to: normalizedEmail, otp });
+        await createAndSendSignupOtp(normalizedEmail);
     } catch (error) {
-        await Otp.deleteOne({ _id: otpRecord._id });
         console.error("Signup OTP Delivery Error:", error.message);
-        const status = error.code === "SMTP_NOT_CONFIGURED" ? 503 : 500;
+        const status = error.code === "SMTP_NOT_CONFIGURED" || error.code === "EMAIL_SENDER_NOT_CONFIGURED" ? 503 : 502;
         return res.status(status).json({ success: false, message: error.message || "Failed to send signup verification email" });
     }
 
@@ -67,6 +75,20 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
     if (email) {
         const normalizedEmail = email.toLowerCase().trim();
         existingUser = await User.findOne({ email: normalizedEmail });
+        if (!existingUser) {
+            try {
+                await createAndSendSignupOtp(normalizedEmail);
+            } catch (error) {
+                console.error("Signup OTP Delivery Error:", error.message);
+                const status = error.code === "SMTP_NOT_CONFIGURED" || error.code === "EMAIL_SENDER_NOT_CONFIGURED" ? 503 : 502;
+                return res.status(status).json({ success: false, message: error.message || "Failed to send signup verification email" });
+            }
+            return res.status(200).json({
+                success: true,
+                message: "Signup verification code sent",
+                purpose: "signup"
+            });
+        }
     } else {
         const digits = String(phone).replace(/\D/g, '');
         const localNumber = digits.length > 10 ? digits.slice(-10) : digits;
@@ -83,7 +105,7 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
     await Otp.deleteMany({ userId: existingUser._id });
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
+    const otpHash = hashOtp(otp);
 
     await Otp.create({
         userId: existingUser._id,
@@ -126,6 +148,25 @@ module.exports.VerifyOtp = wrapAsync(async (req, res) => {
     }
 
     if (!existingUser) {
+        if (email) {
+            const normalizedEmail = email.toLowerCase().trim()
+            const signupOtp = await Otp.findOne({
+                email: normalizedEmail,
+                purpose: "signup",
+                expiresAt: { $gt: Date.now() }
+            })
+            if (!signupOtp) {
+                return res.status(400).json({ success: false, message: "Signup OTP expired or not found. Request a new code." })
+            }
+            if (!isOtpValid(otp, signupOtp.otpHash)) {
+                return res.status(400).json({ success: false, message: "Incorrect signup OTP" })
+            }
+            return res.status(200).json({
+                success: true,
+                signupRequired: true,
+                message: "Email verified. Complete your account details."
+            })
+        }
         return res.status(404).json({ success: false, message: "User does not exist" })
     }
 
@@ -138,12 +179,7 @@ module.exports.VerifyOtp = wrapAsync(async (req, res) => {
         return res.status(400).json({ success: false, message: "OTP expired or invalid" })
     }
 
-    const otpHash = crypto
-        .createHash("sha256")
-        .update(otp)
-        .digest("hex")
-
-    if (otpHash !== otpRecord.otpHash) {
+    if (!isOtpValid(otp, otpRecord.otpHash)) {
         return res.status(400).json({ success: false, message: "Incorrect Otp" })
     }
 
