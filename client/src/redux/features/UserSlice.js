@@ -64,9 +64,6 @@ export const VerifyOtp = createAsyncThunk(
     "user/login/otp",
     async ({ email, phone, otp }) => {
         const { data } = await axiosInstance.post(`/verify-otp`, { email, phone, otp })
-        if (data.signupRequired) {
-            throw new Error("This email is not registered. Verify the code and complete account setup.")
-        }
         return {
             user: data.resUser,
             token: data.token

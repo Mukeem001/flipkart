@@ -7,8 +7,18 @@ const wrapAsync = require("../utils/wrapAsync");
 const { getOtpEmailSettings } = require("../service/smtpSettings");
 const { renderOtpEmail, renderOtpEmailText } = require("../service/otpEmailTemplate");
 const { hashOtp, isOtpValid } = require("../service/otpVerification");
+const { createEmailOnlyAccountDetails } = require("../service/emailOnlyAccount");
+const bcrypt = require("bcryptjs");
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
+const OTP_RESEND_INTERVAL_MS = 30 * 1000;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const getOtpDeliveryErrorStatus = (error) => {
+    if (error.code === "OTP_RATE_LIMITED") return 429;
+    if (error.code === "SMTP_NOT_CONFIGURED" || error.code === "EMAIL_SENDER_NOT_CONFIGURED") return 503;
+    return 502;
+}
 
 const sendOtpEmail = async ({ to, otp }) => {
     const { subject, template } = await getOtpEmailSettings()
@@ -21,6 +31,17 @@ const sendOtpEmail = async ({ to, otp }) => {
 }
 
 const createAndSendSignupOtp = async (email) => {
+    const recentOtp = await Otp.findOne({
+        email,
+        purpose: "signup",
+        createdAt: { $gt: new Date(Date.now() - OTP_RESEND_INTERVAL_MS) }
+    }).select("_id").lean()
+    if (recentOtp) {
+        const error = new Error("Please wait 30 seconds before requesting another code.")
+        error.code = "OTP_RATE_LIMITED"
+        throw error
+    }
+
     await Otp.deleteMany({ email, purpose: "signup" });
     const otp = crypto.randomInt(100000, 1000000).toString();
     const otpRecord = await Otp.create({
@@ -56,8 +77,7 @@ module.exports.SendSignupOtp = wrapAsync(async (req, res) => {
         await createAndSendSignupOtp(normalizedEmail);
     } catch (error) {
         console.error("Signup OTP Delivery Error:", error.message);
-        const status = error.code === "SMTP_NOT_CONFIGURED" || error.code === "EMAIL_SENDER_NOT_CONFIGURED" ? 503 : 502;
-        return res.status(status).json({ success: false, message: error.message || "Failed to send signup verification email" });
+        return res.status(getOtpDeliveryErrorStatus(error)).json({ success: false, message: error.message || "Failed to send signup verification email" });
     }
 
     return res.status(200).json({ success: true, message: "Signup verification code sent" });
@@ -70,6 +90,9 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
     if (!email && !phone) {
         return res.status(400).json({ success: false, message: "Email or phone number is required" });
     }
+    if (email && (typeof email !== "string" || !EMAIL_PATTERN.test(email.trim()))) {
+        return res.status(400).json({ success: false, message: "Enter a valid email address." })
+    }
 
     let existingUser;
     if (email) {
@@ -80,8 +103,7 @@ module.exports.SendOtp = wrapAsync(async (req, res) => {
                 await createAndSendSignupOtp(normalizedEmail);
             } catch (error) {
                 console.error("Signup OTP Delivery Error:", error.message);
-                const status = error.code === "SMTP_NOT_CONFIGURED" || error.code === "EMAIL_SENDER_NOT_CONFIGURED" ? 503 : 502;
-                return res.status(status).json({ success: false, message: error.message || "Failed to send signup verification email" });
+                return res.status(getOtpDeliveryErrorStatus(error)).json({ success: false, message: error.message || "Failed to send signup verification email" });
             }
             return res.status(200).json({
                 success: true,
@@ -133,6 +155,9 @@ module.exports.VerifyOtp = wrapAsync(async (req, res) => {
     if ((!email && !phone) || !otp) {
         return res.status(400).json({ success: false, message: "Email or phone number and OTP are required" });
     }
+    if (email && (typeof email !== "string" || !EMAIL_PATTERN.test(email.trim()))) {
+        return res.status(400).json({ success: false, message: "Enter a valid email address." })
+    }
 
     let existingUser;
     if (email) {
@@ -161,29 +186,41 @@ module.exports.VerifyOtp = wrapAsync(async (req, res) => {
             if (!isOtpValid(otp, signupOtp.otpHash)) {
                 return res.status(400).json({ success: false, message: "Incorrect signup OTP" })
             }
-            return res.status(200).json({
-                success: true,
-                signupRequired: true,
-                message: "Email verified. Complete your account details."
-            })
+            const accountDetails = createEmailOnlyAccountDetails(normalizedEmail)
+            const hashedPassword = await bcrypt.hash(accountDetails.password, 10)
+            try {
+                existingUser = await User.create({
+                    ...accountDetails,
+                    email: normalizedEmail,
+                    password: hashedPassword
+                })
+            } catch (error) {
+                if (error.code !== 11000) throw error
+                existingUser = await User.findOne({ email: normalizedEmail })
+                if (!existingUser) {
+                    return res.status(409).json({ success: false, message: "Could not create account. Please request a new code." })
+                }
+            }
+            await Otp.deleteMany({ email: normalizedEmail, purpose: "signup" })
+        } else {
+            return res.status(404).json({ success: false, message: "User does not exist" })
         }
-        return res.status(404).json({ success: false, message: "User does not exist" })
+    } else {
+        const otpRecord = await Otp.findOne({
+            userId: existingUser._id,
+            expiresAt: { $gt: Date.now() }
+        })
+
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: "OTP expired or invalid" })
+        }
+
+        if (!isOtpValid(otp, otpRecord.otpHash)) {
+            return res.status(400).json({ success: false, message: "Incorrect Otp" })
+        }
+
+        await Otp.deleteMany({ userId: existingUser._id })
     }
-
-    const otpRecord = await Otp.findOne({
-        userId: existingUser._id,
-        expiresAt: { $gt: Date.now() }
-    })
-
-    if (!otpRecord) {
-        return res.status(400).json({ success: false, message: "OTP expired or invalid" })
-    }
-
-    if (!isOtpValid(otp, otpRecord.otpHash)) {
-        return res.status(400).json({ success: false, message: "Incorrect Otp" })
-    }
-
-    await Otp.deleteMany({ userId: existingUser._id })
 
     const accessToken = jwt.sign({ _id: existingUser._id, role: existingUser.role }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "20m" })
     const refreshToken = jwt.sign({ _id: existingUser._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" })

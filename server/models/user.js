@@ -24,8 +24,7 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: true,
-        unique: true
+        trim: true
     },
     role: {
         type: String,
@@ -52,6 +51,11 @@ const userSchema = new mongoose.Schema({
         ref: "Order"
     }
     ]
-}, { timestamps: true })
+}, { timestamps: true, autoIndex: false })
+
+userSchema.index({ phone: 1 }, {
+    unique: true,
+    partialFilterExpression: { phone: { $type: "string", $gt: "" } }
+})
 
 module.exports = mongoose.model("User", userSchema)

@@ -419,7 +419,7 @@ For SMTP providers outside Render Free, use port **465** with SSL/TLS enabled, o
 
 OTP emails use a short, security-focused message and include both HTML and plain-text bodies. Codes expire after 10 minutes. Message wording alone cannot guarantee inbox placement: configure SPF and DKIM for the sender domain, publish a DMARC policy, use a verified sender address aligned with that domain, and follow the email provider's deliverability guidance. The SMTP test email uses a neutral subject and body and does not mention the admin panel.
 
-From the email login screen, an address that is not registered receives a signup verification code. After verifying it, the user completes their name, phone, username, and password to create the account. Existing email accounts continue through the login OTP flow.
+From the email login or signup screen, an address that is not registered receives a signup verification code. Verifying it creates the account and signs the user in without asking for extra fields. The account name is derived from the email address; users can add delivery details later. Existing email accounts continue through the login OTP flow.
 
 ### Render Backend
 

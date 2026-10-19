@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 import "./LoginSignup.css"
 import { useDataContextProvider } from '../../context/DataProvider';
 import { useDispatch, useSelector } from 'react-redux';
-import { firebasePhoneLogin, loginUser, signUpUser, VerifyOtp } from '../../redux/features/UserSlice';
-import { SendOtp, SendSignupOtp, SendFirebaseOtp, VerifyFirebaseOtp, VerifySignupOtp } from '../../service/Api';
+import { firebasePhoneLogin, loginUser, VerifyOtp } from '../../redux/features/UserSlice';
+import { SendFirebaseOtp, VerifyFirebaseOtp } from '../../service/Api';
 import toast from "react-hot-toast"
 import { X } from 'lucide-react'
 import flipkartIcon from '../../../../assetsicon/flipkart icon.png'
@@ -38,13 +38,7 @@ const LoginSignup = () => {
         phone: "",
     })
 
-    const [signupData, setSignupData] = useState({
-        name: "",
-        email: "",
-        username: "",
-        password: "",
-        phone: ""
-    })
+    const [signupData, setSignupData] = useState({ email: "" })
 
     const [loading, setLoading] = useState(false);
     const [otpLoading, setOtpLoading] = useState(false);
@@ -52,16 +46,8 @@ const LoginSignup = () => {
     const [usePasswordLogin, setUsePasswordLogin] = useState(false);
     const [otpIdentifier, setOtpIdentifier] = useState(null);
     const [otpPurpose, setOtpPurpose] = useState('login');
-    const [signupOtpPendingDetails, setSignupOtpPendingDetails] = useState(false);
-    const [verifiedSignupOtp, setVerifiedSignupOtp] = useState('');
     const [otpDigits, setOtpDigits] = useState(Array(6).fill(''));
     const [otpCountdown, setOtpCountdown] = useState(30);
-
-    const onInputChange = (e) => {
-        const value = e.target.name === 'phone' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value
-        const newData = { ...signupData, [e.target.name]: value };
-        setSignupData(newData);
-    };
 
     const onloginInputChange = (e) => {
         const value = e.target.name === 'phone' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value
@@ -72,13 +58,7 @@ const LoginSignup = () => {
     // when page changed (from Login to Signup)
 
     const changeForm = () => {
-        setSignupData({
-            name: "",
-            email: "",
-            username: "",
-            password: "",
-            phone: ""
-        })
+        setSignupData({ email: "" })
         setLoginData({
             email: "",
             password: "",
@@ -86,8 +66,6 @@ const LoginSignup = () => {
         })
         setUseEmailLogin(true)
         setUsePasswordLogin(false)
-        setSignupOtpPendingDetails(false)
-        setVerifiedSignupOtp('')
         setOtpPurpose('login')
 
         if (form === "login") {
@@ -136,38 +114,6 @@ const LoginSignup = () => {
         } catch (error) {
             toast.error(getLoginErrorMessage(error))
             setLoading(false);
-        }
-    }
-
-    const signupHandeler = async () => {
-        if (!signupData.email || !signupData.name || !signupData.password || !signupData.phone || !signupData.username) {
-            toast.error('Please fill in all fields')
-            return
-        }
-        try {
-            setLoading(true);
-            if (verifiedSignupOtp) {
-                await dispatch(signUpUser({ ...signupData, otp: verifiedSignupOtp })).unwrap()
-                setVerifiedSignupOtp('')
-                toast.success('Email verified! Account created.')
-                return
-            }
-            await SendSignupOtp(signupData)
-            setOtpPurpose('signup')
-            setSignupOtpPendingDetails(false)
-            setOtpIdentifier({ email: signupData.email })
-            setOtpDigits(Array(6).fill(''))
-            setOtpCountdown(30)
-            setForm('otp')
-            toast.success('Verification code sent to your email')
-            setLoading(false);
-        } catch (error) {
-            const message = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
-                ? 'Signup verification request timed out. Please try again.'
-                : error.response?.data?.message || error.message || 'Could not send verification code. Try again.'
-            toast.error(message)
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -230,6 +176,9 @@ const LoginSignup = () => {
             toast.error("Enter your email or phone number")
             return
         }
+        if (otpTarget.email) {
+            setLoginData(current => ({ ...current, email: otpTarget.email.trim() }))
+        }
         try {
             setOtpLoading(true);
             setOtpPurpose('login')
@@ -245,18 +194,11 @@ const LoginSignup = () => {
                 return
             }
 
-            if (firebaseResult?.purpose === 'signup') {
-                setSignupData(current => ({ ...current, email: otpTarget.email.trim() }))
-                setSignupOtpPendingDetails(true)
-                setVerifiedSignupOtp('')
-                setOtpPurpose('signup')
-            } else {
-                setSignupOtpPendingDetails(false)
-                setVerifiedSignupOtp('')
-            }
+            const purpose = firebaseResult?.purpose === 'signup' ? 'signup' : 'login'
+            setOtpPurpose(purpose)
             setOtpIdentifier(otpTarget)
             setOtpDigits(Array(6).fill(''))
-            toast.success(firebaseResult?.purpose === 'signup'
+            toast.success(purpose === 'signup'
                 ? 'Email code sent. Verify it to create your account.'
                 : otpTarget.phone ? "Code sent to the email registered with this number" : "OTP sent to your email!")
             setOtpCountdown(30)
@@ -272,24 +214,6 @@ const LoginSignup = () => {
     }
 
     const resendOtp = async () => {
-        if (otpPurpose === 'signup' && signupOtpPendingDetails) {
-            try {
-                setOtpLoading(true)
-                const response = await SendOtp({ email: signupData.email })
-                setOtpDigits(Array(6).fill(''))
-                setOtpCountdown(30)
-                toast.success(response.message || 'Signup verification code sent')
-            } catch (error) {
-                toast.error(error.response?.data?.message || error.message || 'Could not resend verification code.')
-            } finally {
-                setOtpLoading(false)
-            }
-            return
-        }
-        if (otpPurpose === 'signup') {
-            await signupHandeler()
-            return
-        }
         await reqOtp(otpIdentifier)
     }
 
@@ -303,25 +227,6 @@ const LoginSignup = () => {
             return
         }
         try {
-            if (otpPurpose === 'signup') {
-                if (signupOtpPendingDetails) {
-                    const response = await VerifySignupOtp(otpIdentifier.email, otp)
-                    if (!response.signupRequired) {
-                        throw new Error(response.message || 'Could not verify signup code.')
-                    }
-                    setVerifiedSignupOtp(otp)
-                    setSignupOtpPendingDetails(false)
-                    setForm('signup')
-                    toast.success('Email verified. Complete your details to create your account.')
-                    setLoading(false)
-                    return
-                }
-                await dispatch(signUpUser({ ...signupData, otp })).unwrap()
-                toast.success('Email verified! Account created.')
-                setLoading(false)
-                return
-            }
-
             const firebaseConfirmation = otpIdentifier?.confirmationResult
             if (firebaseConfirmation) {
                 const firebaseUser = await VerifyFirebaseOtp(firebaseConfirmation, otp)
@@ -333,7 +238,9 @@ const LoginSignup = () => {
             }
 
             await dispatch(VerifyOtp({ ...(otpIdentifier || { email: loginData.email }), otp })).unwrap()
-            toast.success('OTP Verified! Logging you in...')
+            toast.success(otpPurpose === 'signup'
+                ? 'Email verified! Your account is ready.'
+                : 'OTP Verified! Logging you in...')
             setLoading(false);
         } catch (error) {
             toast.error(error.response?.data?.message || error.message || 'Invalid OTP. Please try again.')
@@ -454,16 +361,10 @@ const LoginSignup = () => {
     } if (form === "signup") {
         content = <div className="right-section" >
             <div className="signup-input-section">
-                <input value={signupData.name} type="text" onChange={onInputChange} placeholder='Enter Your Name' name='name' />
-                <input value={signupData.email} type="email" onChange={onInputChange} placeholder='Enter Email' name='email' readOnly={Boolean(verifiedSignupOtp)} />
-                <input value={signupData.username} type="text" onChange={onInputChange} placeholder='Enter Username' name='username' />
-                <input value={signupData.password} type="password" onChange={onInputChange} placeholder='Enter Password' name='password' />
-                <input value={signupData.phone} type="tel" onChange={onInputChange} placeholder='Enter Phone' name='phone' />
-                <button type="button" onClick={signupHandeler} disabled={loading}> {loading ? <div class="d-flex justify-content-center">
-                    <div class="spinner-border" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                </div> : verifiedSignupOtp ? "Create account" : "Continue"}</button>
+                <input value={signupData.email} type="email" onChange={event => setSignupData({ email: event.target.value })} placeholder="Enter Email" name="email" autoComplete="email" />
+                <button type="button" onClick={() => reqOtp({ email: signupData.email })} disabled={loading || otpLoading || !signupData.email}>
+                    {otpLoading ? 'Sending code…' : 'Continue with email'}
+                </button>
             </div>
             <div className="input-text">
                 <p onClick={changeForm}>Already have account ? Log in</p>
@@ -472,31 +373,12 @@ const LoginSignup = () => {
                 <h3>Create your account</h3>
                 <label className="mobile-auth-field">
                     <span>Email ID</span>
-                    <input value={signupData.email} type="email" onChange={onInputChange} placeholder="Enter email" name="email" autoComplete="email" readOnly={Boolean(verifiedSignupOtp)} />
+                    <input value={signupData.email} type="email" onChange={event => setSignupData({ email: event.target.value })} placeholder="Enter email" name="email" autoComplete="email" />
                 </label>
-                <label className="mobile-auth-field">
-                    <span>Mobile number</span>
-                    <div className="mobile-auth-phone">
-                        <span>+91</span>
-                        <input value={signupData.phone} type="tel" inputMode="numeric" onChange={onInputChange} placeholder="Enter mobile number" name="phone" autoComplete="tel-national" maxLength={10} />
-                    </div>
-                </label>
-                <label className="mobile-auth-field">
-                    <span>Username</span>
-                    <input value={signupData.username} type="text" onChange={onInputChange} placeholder="Choose a username" name="username" autoComplete="username" />
-                </label>
-                <label className="mobile-auth-field">
-                    <span>Password</span>
-                    <input value={signupData.password} type="password" onChange={onInputChange} placeholder="Create a password" name="password" autoComplete="new-password" />
-                </label>
-                <label className="mobile-auth-field">
-                    <span>Full name</span>
-                    <input value={signupData.name} type="text" onChange={onInputChange} placeholder="Enter your name" name="name" autoComplete="name" />
-                </label>
-                <button className="mobile-auth-primary" type="button" onClick={signupHandeler} disabled={loading || !signupData.phone || !signupData.email || !signupData.name || !signupData.username || !signupData.password}>
-                    {loading ? (verifiedSignupOtp ? 'Creating account…' : 'Sending code…') : verifiedSignupOtp ? 'Create account' : 'Continue'}
+                <button className="mobile-auth-primary" type="button" onClick={() => reqOtp({ email: signupData.email })} disabled={loading || otpLoading || !signupData.email}>
+                    {otpLoading ? 'Sending code…' : 'Continue with email'}
                 </button>
-                <p className="mobile-auth-terms">We&apos;ll send a verification code to your email address.</p>
+                <p className="mobile-auth-terms">We&apos;ll create your account after you verify your email.</p>
                 <button className="mobile-auth-link mobile-auth-create" type="button" onClick={changeForm}>Already have an account? Log in</button>
             </div>
         </div>

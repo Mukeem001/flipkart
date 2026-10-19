@@ -21,6 +21,7 @@ const { migrateSmtpSettingsFromEnv } = require("./service/smtpSettings")
 const corsSettingsRouter = require("./routes/corsSettingsRoute")
 const { getConfiguredCorsOrigins, loadCorsOrigins } = require("./service/corsSettings")
 const User = require("./models/user")
+const { ensureUserIndexes } = require("./service/userIndexes")
 
 const DEMO_USER = {
     name: "Demo User",
@@ -134,6 +135,7 @@ const ensureAdminUser = async () => {
 
 const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URL)
+    await ensureUserIndexes()
     await migrateSmtpSettingsFromEnv()
     await loadCorsOrigins()
     await ensureDemoUser()

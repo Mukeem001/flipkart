@@ -67,16 +67,6 @@ export const SearchProducts = async (query) => {
     return res.data.allProducts || []
 }
 
-export const SendSignupOtp = async ({ email, username, phone }) => {
-    const { data } = await axiosInstance.post('/signup/send-otp', { email, username, phone }, { timeout: 20000 })
-    return data.message
-}
-
-export const VerifySignupOtp = async (email, otp) => {
-    const { data } = await axiosInstance.post('/verify-otp', { email, otp })
-    return data
-}
-
 export const SendFirebaseOtp = async (identifier) => {
     const firebaseEnabled = !!import.meta.env.VITE_FIREBASE_API_KEY
     const payload = typeof identifier === 'string' ? { email: identifier } : identifier
