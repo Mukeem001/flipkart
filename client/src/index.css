@@ -6,6 +6,23 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+html,
+body {
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
+#root {
+  overflow-x: clip;
+}
+
 html p {
   margin: 0;
   padding: 0;

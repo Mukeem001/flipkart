@@ -4,6 +4,7 @@ import { ArrowDown, ArrowLeft, Search, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppBack } from "../hooks/useAppBack";
 import { fetchProducts } from "../redux/features/ProductSlice";
+import { getMobileCategoryProducts, getMobilePromoProducts } from "../utils/mobileCategoryProducts";
 import "./css/categories.css";
 import sidebarAppliances from "../categories-image/appliances.webp";
 import sidebarAuto from "../categories-image/auto accessrioes.png";
@@ -34,13 +35,9 @@ import mainBoltAce from "../categories-image/bollt ace5g.webp";
 import mainBoltEvo from "../categories-image/bolt evo.webp";
 import mainClaimNow from "../categories-image/clsim now.webp";
 import mainCreatorhood from "../categories-image/creatorhood.webp";
-import mainEarlyBird from "../categories-image/early bird deals.png";
-import mainEarth from "../categories-image/flipkart for earth.jpg";
 import mainFlight from "../categories-image/flight.webp";
 import mainFlipkartPay from "../categories-image/flipkart pay.webp";
 import mainOriginals from "../categories-image/flipkart originals.jpg";
-import mainSamarth from "../categories-image/flipkart samarth.webp";
-import mainFreeCoin from "../categories-image/free super coinn.webp";
 import mainGenZ from "../categories-image/gens trend.webp";
 import mainFitbit from "../categories-image/google fitbit air.webp";
 import mainIphone from "../categories-image/iphone 18pro.webp";
@@ -48,13 +45,8 @@ import mainJoinBlack from "../categories-image/join black.webp";
 import mainNoiseBand from "../categories-image/noise rep fitness band.webp";
 import mainPersonalLoan from "../categories-image/personal loan.webp";
 import mainSuperCoin from "../categories-image/super coin.webp";
-import mainSuperCoinRewards from "../categories-image/super coin rewards.webp";
 import mainValue365 from "../categories-image/value 365.webp";
 import mainLiveNow from "../categories-image/starts9 october.webp";
-import mainAIFeatures from "../categories-image/ai+nova tab.png";
-import mainNextGen from "../categories-image/next gens brand.png";
-import mainEMI from "../categories-image/flipkart emi.png";
-import mainPetSupplies from "../categories-image/pet supplies.jpg";
 import mainSeller from "../categories-image/become a seller.webp";
 import minutesIcon from "../../../assetsicon/bike icon.png";
 
@@ -127,7 +119,8 @@ const sections = [
 function MobileCategoriesView() {
   const dispatch = useDispatch();
   const [activeCategory, setActiveCategory] = useState("For You");
-  const { products = [], productsLoaded, loadingProducts } = useSelector((state) => state.products);
+  const [selectedPromo, setSelectedPromo] = useState(null);
+  const { products = [], productsLoaded, loadingProducts, error } = useSelector((state) => state.products);
   const goBack = useAppBack('/')
 
   useEffect(() => {
@@ -146,6 +139,7 @@ function MobileCategoriesView() {
       href: product?._id ? `/product/${product._id}` : item.href,
     };
   });
+  const activeCategoryProducts = getMobileCategoryProducts(products, activeCategory);
 
   return (
     <div className="mobile-categories-screen">
@@ -175,7 +169,10 @@ function MobileCategoriesView() {
             <button
               key={category.name}
               type="button"
-              onClick={() => setActiveCategory(category.name)}
+              onClick={() => {
+                setActiveCategory(category.name)
+                setSelectedPromo(null)
+              }}
               className={`mobile-category-link${activeCategory === category.name ? " is-selected" : ""}`}
               aria-pressed={activeCategory === category.name}
             >
@@ -186,51 +183,104 @@ function MobileCategoriesView() {
         </nav>
 
         <main className="mobile-categories-content">
-          {sections.map((section, index) => (
-            <Fragment key={section.title}>
-              <section className="mobile-category-section">
-                <h2>
-                  {activeCategory === "For You"
-                    ? section.title
-                    : section.title === "Popular Store"
-                      ? activeCategory
-                      : section.title}
-                </h2>
-                <div className="mobile-category-tile-grid">
-                  {section.tiles.map((tile) => (
-                    <Link
-                      key={tile.name}
-                      to={tile.href}
-                      className={`mobile-category-tile${tile.viewAll ? " mobile-category-tile--view-all" : ""}`}
-                    >
-                      <span className="mobile-category-tile__image">
-                        {tile.viewAll ? <ArrowDown size={32} aria-hidden="true" /> : <img src={tile.image} alt="" loading="lazy" />}
+          {activeCategory === "For You" ? selectedPromo ? (
+            <section className="mobile-category-section mobile-category-products">
+              <div className="mobile-promo-products-heading">
+                <button type="button" onClick={() => setSelectedPromo(null)}>‹ For You</button>
+                <h2>{selectedPromo.name}</h2>
+              </div>
+              {loadingProducts && products.length === 0 ? (
+                <p className="mobile-category-products__state" role="status">Loading products…</p>
+              ) : error && products.length === 0 ? (
+                <div className="mobile-category-products__state" role="alert">
+                  <p>Products could not be loaded.</p>
+                  <button type="button" onClick={() => dispatch(fetchProducts())}>Retry</button>
+                </div>
+              ) : products.length === 0 ? (
+                <p className="mobile-category-products__state" role="status">No products are available right now.</p>
+              ) : (
+                <div className="mobile-category-products__grid">
+                  {getMobilePromoProducts(products, selectedPromo.name).map(product => (
+                    <Link key={product._id} to={`/product/${product._id}`} className="mobile-category-product">
+                      <span className="mobile-category-product__image">
+                        <img src={product.detailUrl} alt={product.title?.shortTitle || "Product"} loading="lazy" />
                       </span>
-                      {tile.badge && (
-                        <span className="mobile-category-tile__badge">
-                          {tile.badge}
+                      <strong>{product.title?.shortTitle || product.title?.longTitle || "Product"}</strong>
+                      <span className="mobile-category-product__price">₹{Number(product.price?.cost || 0).toLocaleString("en-IN")}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : <>
+            {sections.map((section, index) => (
+              <Fragment key={section.title}>
+                <section className="mobile-category-section">
+                  <h2>{section.title}</h2>
+                  <div className="mobile-category-tile-grid">
+                    {section.tiles.map((tile) => (
+                      <Link
+                        key={tile.name}
+                        to={tile.href}
+                        className={`mobile-category-tile${tile.viewAll ? " mobile-category-tile--view-all" : ""}`}
+                        onClick={event => {
+                          event.preventDefault()
+                          setSelectedPromo(tile)
+                        }}
+                      >
+                        <span className="mobile-category-tile__image">
+                          {tile.viewAll ? <ArrowDown size={32} aria-hidden="true" /> : <img src={tile.image} alt="" loading="lazy" />}
                         </span>
-                      )}
-                      <span className="mobile-category-tile__label">
-                        {tile.name}
+                        {tile.badge && (
+                          <span className="mobile-category-tile__badge">
+                            {tile.badge}
+                          </span>
+                        )}
+                        <span className="mobile-category-tile__label">{tile.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+                {index === 1 && <section className="mobile-category-section mobile-recently-viewed">
+                  <h2>Recently Viewed Stores</h2>
+                  <div className="mobile-recently-viewed__track">
+                    {recentlyViewedItems.map((item) => (
+                      <Link key={item.name} to={item.href} className="mobile-recently-viewed__card">
+                        <img src={item.image} alt="" loading="lazy" />
+                        <span>{item.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>}
+              </Fragment>
+            ))}
+          </> : (
+            <section className="mobile-category-section mobile-category-products">
+              <h2>{activeCategory}</h2>
+              {loadingProducts && products.length === 0 ? (
+                <p className="mobile-category-products__state" role="status">Loading products…</p>
+              ) : error && products.length === 0 ? (
+                <div className="mobile-category-products__state" role="alert">
+                  <p>Products could not be loaded.</p>
+                  <button type="button" onClick={() => dispatch(fetchProducts())}>Retry</button>
+                </div>
+              ) : products.length === 0 ? (
+                <p className="mobile-category-products__state" role="status">No products are available right now.</p>
+              ) : (
+                <div className="mobile-category-products__grid">
+                  {activeCategoryProducts.map(product => (
+                    <Link key={product._id} to={`/product/${product._id}`} className="mobile-category-product">
+                      <span className="mobile-category-product__image">
+                        <img src={product.detailUrl} alt={product.title?.shortTitle || "Product"} loading="lazy" />
                       </span>
+                      <strong>{product.title?.shortTitle || product.title?.longTitle || "Product"}</strong>
+                      <span className="mobile-category-product__price">₹{Number(product.price?.cost || 0).toLocaleString("en-IN")}</span>
                     </Link>
                   ))}
                 </div>
-              </section>
-              {index === 1 && <section className="mobile-category-section mobile-recently-viewed">
-                <h2>Recently Viewed Stores</h2>
-                <div className="mobile-recently-viewed__track">
-                  {recentlyViewedItems.map((item) => (
-                    <Link key={item.name} to={item.href} className="mobile-recently-viewed__card">
-                      <img src={item.image} alt="" loading="lazy" />
-                      <span>{item.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              </section>}
-            </Fragment>
-          ))}
+              )}
+            </section>
+          )}
         </main>
       </div>
     </div>

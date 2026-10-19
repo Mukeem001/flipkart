@@ -57,6 +57,10 @@
   height: 85%;
 }
 
+.mobile-auth-content {
+  display: none;
+}
+
 .right-section .input-section input {
   width: 100%;
   margin: 0.5rem;
@@ -312,6 +316,134 @@
   .left-section-image img{
     width: 8rem;
     height: 5.5rem;
+  }
+
+  .login-signup-container.auth-mobile-flow {
+    width: min(calc(100% - 32px), 440px);
+    height: auto;
+    max-height: 90dvh;
+    overflow-y: auto;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .auth-mobile-flow .left-section {
+    display: none;
+  }
+
+  .auth-mobile-flow > .right-section {
+    display: block;
+    width: 100%;
+    padding: 22px;
+  }
+
+  .auth-mobile-flow > .right-section > .input-section,
+  .auth-mobile-flow > .right-section > .signup-input-section,
+  .auth-mobile-flow > .right-section > .input-text {
+    display: none;
+  }
+
+  .auth-mobile-flow .mobile-auth-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mobile-auth-content h3 {
+    margin: 0 0 4px;
+    color: #222;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .mobile-auth-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+    color: #4c5a6b;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .mobile-auth-field > input,
+  .mobile-auth-phone {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0 12px;
+    border: 1px solid #b8c7dc;
+    border-radius: 6px;
+    background: #fff;
+    color: #222;
+    font: inherit;
+    font-size: 16px;
+  }
+
+  .mobile-auth-phone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-auth-phone > span {
+    padding-right: 10px;
+    border-right: 1px solid #d4dbe5;
+    color: #333;
+    font-size: 16px;
+  }
+
+  .mobile-auth-phone input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #222;
+    font: inherit;
+    font-size: 16px;
+  }
+
+  .mobile-auth-primary {
+    min-height: 46px;
+    border: 0;
+    border-radius: 5px;
+    background: #fb641b;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .mobile-auth-primary:disabled {
+    background: #c7c7c7;
+  }
+
+  .mobile-auth-link {
+    min-height: 30px;
+    border: 0;
+    background: transparent;
+    color: #2874f0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .mobile-auth-terms {
+    margin: 2px 0 0;
+    color: #777;
+    font-size: 12px !important;
+    line-height: 18px;
+  }
+
+  .mobile-auth-create {
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+  }
+
+  .auth-mobile-flow .demo-login-button,
+  .checkout-auth-content .demo-login-box,
+  .checkout-auth-content .demo-login-button {
+    display: none !important;
   }
 }
 

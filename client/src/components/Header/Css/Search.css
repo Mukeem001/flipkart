@@ -51,25 +51,27 @@
 .searchbar-list ul {
   display: flex;
   flex-direction: column;
-  align-items: baseline;
+  align-items: stretch;
   margin: 0;
   padding: 0;
   width: 100%;
 }
 
 .searchbar-list li {
-  flex-direction: column;
   list-style: none;
-  display: flex;
-  flex-direction: column;
+  display: block;
   padding: 0.4rem 0.5rem 0.4rem 0.5rem;
   width: 100%;
   border-bottom: 1px solid rgba(0, 0, 0, 0.24);
 }
 
 .search-link {
+  display: block;
+  overflow: hidden;
   text-decoration: none;
   color: black;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .searchbar-list li:hover {
@@ -115,6 +117,31 @@
   box-shadow: 0 8px 24px rgba(20, 40, 70, 0.14);
 }
 
+@media (max-width: 800px) {
+  .searchbar--compact .searchbar-list {
+    width: min(360px, calc(100vw - 72px));
+    max-height: min(50vh, 400px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .searchbar--compact .searchbar-list li {
+    max-height: none;
+    padding: 11px 14px;
+    font-size: 14px;
+    line-height: 20px;
+    text-overflow: clip;
+  }
+
+  .searchbar--compact .search-all-link {
+    color: #145de0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 /* -----------Responsive----------- */
 @media (max-width: 850px) {
   .searchbar {
@@ -137,11 +164,17 @@
     width: auto;
     padding: 0 10px;
   }
-  .searchbar-list li {
+  .searchbar:not(.searchbar--compact) .searchbar-list li {
     font-size: 0.7rem;
     overflow: hidden;
     text-overflow: ellipsis;
     max-height: 1.7rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .searchbar--compact .searchbar-search input {
+    font-size: 16px;
   }
 }
 
@@ -176,7 +209,7 @@
   .mobile-sticky-search .searchbar-search input {
     height: 46px;
     background: #fff;
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .mobile-sticky-search .searchbar-search input::placeholder {

@@ -53,6 +53,17 @@ import { fetchProducts } from "../../redux/features/ProductSlice";
 import { bannerData } from "../../constants/Data";
 import { useAppBack } from "../../hooks/useAppBack";
 
+const getNameFromEmail = (email) => {
+    const emailName = email?.split("@")[0]?.split("+")[0]
+    if (!emailName) return ""
+
+    return emailName
+        .split(/[._-]+/)
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ")
+}
+
 const Header = () => {
 
     const [sidebar, setSidebar] = useState(false)
@@ -207,6 +218,7 @@ const AccountPageContent = ({ user, openLogin, navigate, logout }) => {
     const dispatch = useDispatch()
     const goBack = useAppBack('/')
     const { products = [], productsLoaded, loadingProducts } = useSelector(state => state.products)
+    const displayName = getNameFromEmail(user?.email) || user?.name || "Account"
 
     useEffect(() => {
         if (user && !productsLoaded && !loadingProducts) dispatch(fetchProducts())
@@ -256,7 +268,7 @@ const AccountPageContent = ({ user, openLogin, navigate, logout }) => {
         return <main className="mobile-account-page logged-in-account">
             <section className="account-hero-card">
                 <div className="account-hero-top">
-                    <h2>{user.name}</h2>
+                    <h2>{displayName}</h2>
                     <div className="account-black-badge">
                         <FontAwesomeIcon icon={faBolt} />
                         <span>0</span>
@@ -371,7 +383,7 @@ const AccountPageContent = ({ user, openLogin, navigate, logout }) => {
         </div>
 
         <section className="account-login-prompt">
-            <p>{user?.name ? `Hi ${user.name}` : 'Log in to get exclusive offers'}</p>
+            <p>{user ? `Hi ${displayName}` : 'Log in to get exclusive offers'}</p>
             <button type="button" onClick={() => user ? navigate('/my-orders') : openLogin()}>{user ? 'My Orders' : 'Log In'}</button>
         </section>
 

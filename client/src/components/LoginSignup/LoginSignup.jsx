@@ -48,7 +48,7 @@ const LoginSignup = () => {
 
     const [loading, setLoading] = useState(false);
     const [otpLoading, setOtpLoading] = useState(false);
-    const [useEmailLogin, setUseEmailLogin] = useState(false);
+    const [useEmailLogin, setUseEmailLogin] = useState(true);
     const [usePasswordLogin, setUsePasswordLogin] = useState(false);
     const [otpIdentifier, setOtpIdentifier] = useState(null);
         const [otpPurpose, setOtpPurpose] = useState('login');
@@ -56,7 +56,8 @@ const LoginSignup = () => {
     const [otpCountdown, setOtpCountdown] = useState(30);
 
     const onInputChange = (e) => {
-        const newData = { ...signupData, [e.target.name]: e.target.value };
+        const value = e.target.name === 'phone' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value
+        const newData = { ...signupData, [e.target.name]: value };
         setSignupData(newData);
     };
 
@@ -81,6 +82,8 @@ const LoginSignup = () => {
             password: "",
             phone: "",
         })
+        setUseEmailLogin(true)
+        setUsePasswordLogin(false)
 
         if (form === "login") {
             setForm("signup")
@@ -147,8 +150,12 @@ const LoginSignup = () => {
             toast.success('Verification code sent to your email')
             setLoading(false);
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message || 'Could not send verification code. Try again.')
-            setLoading(false);
+            const message = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
+                ? 'Signup verification request timed out. Please try again.'
+                : error.response?.data?.message || error.message || 'Could not send verification code. Try again.'
+            toast.error(message)
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -233,7 +240,7 @@ const LoginSignup = () => {
             setForm("otp")
         } catch (error) {
             const message = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
-                ? 'OTP request timed out. Please try again or log in with email and password.'
+                ? 'OTP request timed out. Please try again.'
                 : error.response?.data?.message || error.message || "Failed to send OTP. Try again."
             toast.error(message)
         } finally {
@@ -310,9 +317,6 @@ const LoginSignup = () => {
             {!usePasswordLogin && <button className="checkout-auth-text-button" type="button" onClick={() => setUseEmailLogin(!useEmailLogin)}>
                 {useEmailLogin ? 'Use Phone Number' : 'Use Email-ID'}
             </button>}
-            <button className="checkout-auth-text-button" type="button" onClick={() => setUsePasswordLogin(!usePasswordLogin)}>
-                {usePasswordLogin ? 'Use OTP instead' : 'Log in with email and password'}
-            </button>
             <button className="demo-login-button" type="button" onClick={handleDemoLogin} disabled={loading}>
                 {loading ? 'Logging in...' : 'Use Demo Login'}
             </button>
@@ -345,6 +349,50 @@ const LoginSignup = () => {
             <div className="input-text">
                 <p onClick={changeForm}>New to FlipKart ? Create a account</p>
             </div>
+            <div className="mobile-auth-content">
+                <h3>Log in</h3>
+                {usePasswordLogin ? <>
+                    <label className="mobile-auth-field">
+                        <span>Email ID</span>
+                        <input value={loginData.email} onChange={onloginInputChange} type="email" placeholder="Enter email" name="email" autoComplete="email" />
+                    </label>
+                    <label className="mobile-auth-field">
+                        <span>Password</span>
+                        <input value={loginData.password} onChange={onloginInputChange} type="password" placeholder="Enter password" name="password" autoComplete="current-password" />
+                    </label>
+                    <button className="mobile-auth-primary" type="button" onClick={loghimin} disabled={loading || !loginData.email || !loginData.password}>
+                        {loading ? 'Logging in…' : 'Log in'}
+                    </button>
+                </> : <>
+                    {useEmailLogin ? (
+                        <label className="mobile-auth-field">
+                            <span>Email ID</span>
+                            <input value={loginData.email} onChange={onloginInputChange} type="email" placeholder="Enter email" name="email" autoComplete="email" />
+                        </label>
+                    ) : (
+                        <label className="mobile-auth-field">
+                            <span>Mobile number</span>
+                            <div className="mobile-auth-phone">
+                                <span>+91</span>
+                                <input value={loginData.phone} onChange={onloginInputChange} type="tel" inputMode="numeric" placeholder="Enter mobile number" name="phone" autoComplete="tel-national" maxLength={10} />
+                            </div>
+                        </label>
+                    )}
+                    <button
+                        className="mobile-auth-primary"
+                        type="button"
+                        onClick={() => reqOtp(useEmailLogin ? { email: loginData.email } : { phone: loginData.phone })}
+                        disabled={loading || otpLoading || (useEmailLogin ? !loginData.email : loginData.phone.length !== 10)}
+                    >
+                        {otpLoading ? 'Sending code…' : 'Continue'}
+                    </button>
+                    <button className="mobile-auth-link" type="button" onClick={() => setUseEmailLogin(value => !value)}>
+                        {useEmailLogin ? 'Use mobile number instead' : 'Use email ID instead'}
+                    </button>
+                </>}
+                <p className="mobile-auth-terms">By continuing, you agree to Flipkart&apos;s Terms of Use and Privacy Policy.</p>
+                <button className="mobile-auth-link mobile-auth-create" type="button" onClick={changeForm}>New to Flipkart? Create an account</button>
+            </div>
         </div>
     } if (form === "signup") {
         content = <div className="right-section" >
@@ -362,6 +410,33 @@ const LoginSignup = () => {
             </div>
             <div className="input-text">
                 <p onClick={changeForm}>Already have account ? Log in</p>
+            </div>
+            <div className="mobile-auth-content">
+                <h3>Create your account</h3>
+                <label className="mobile-auth-field">
+                    <span>Email ID</span>
+                    <input value={signupData.email} type="email" onChange={onInputChange} placeholder="Enter email" name="email" autoComplete="email" />
+                </label>
+                <label className="mobile-auth-field">
+                    <span>Mobile number</span>
+                    <div className="mobile-auth-phone">
+                        <span>+91</span>
+                        <input value={signupData.phone} type="tel" inputMode="numeric" onChange={onInputChange} placeholder="Enter mobile number" name="phone" autoComplete="tel-national" maxLength={10} />
+                    </div>
+                </label>
+                <label className="mobile-auth-field">
+                    <span>Username</span>
+                    <input value={signupData.username} type="text" onChange={onInputChange} placeholder="Choose a username" name="username" autoComplete="username" />
+                </label>
+                <label className="mobile-auth-field">
+                    <span>Password</span>
+                    <input value={signupData.password} type="password" onChange={onInputChange} placeholder="Create a password" name="password" autoComplete="new-password" />
+                </label>
+                <button className="mobile-auth-primary" type="button" onClick={signupHandeler} disabled={loading || !signupData.phone || !signupData.email || !signupData.name || !signupData.username || !signupData.password}>
+                    {loading ? 'Sending code…' : 'Continue'}
+                </button>
+                <p className="mobile-auth-terms">We&apos;ll send a verification code to your email address.</p>
+                <button className="mobile-auth-link mobile-auth-create" type="button" onClick={changeForm}>Already have an account? Log in</button>
             </div>
         </div>
     } if (form === "otp") {
@@ -402,7 +477,7 @@ const LoginSignup = () => {
                     <button type="button" aria-label="Close login" onClick={toggleForm}><X size={25} /></button>
                     <div><img className="checkout-flipkart-wordmark" src={flipkartText} alt="Flipkart" /><img className="checkout-flipkart-icon" src={flipkartIcon} alt="" /></div>
                 </header>}
-                <div className={`login-signup-container ${checkoutLogin ? 'checkout-login-container' : ''} ${checkoutLogin && form === 'otp' ? 'checkout-otp-container' : ''}`} onClick={(e) => e.stopPropagation()}>
+                <div className={`login-signup-container ${checkoutLogin ? 'checkout-login-container' : ''} ${checkoutLogin && form === 'otp' ? 'checkout-otp-container' : ''} ${!checkoutLogin && ['login', 'signup'].includes(form) ? 'auth-mobile-flow' : ''}`} onClick={(e) => e.stopPropagation()}>
                     {checkoutLogin ? <>
                         {form !== 'otp' && <header className="checkout-auth-heading">
                             <h2>{form === 'otp' ? 'Verify your email' : form === 'signup' ? 'Create your account' : 'Log in to complete your shopping'}</h2>

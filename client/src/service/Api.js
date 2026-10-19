@@ -68,7 +68,7 @@ export const SearchProducts = async (query) => {
 }
 
 export const SendSignupOtp = async ({ email, username, phone }) => {
-    const { data } = await axiosInstance.post('/signup/send-otp', { email, username, phone })
+    const { data } = await axiosInstance.post('/signup/send-otp', { email, username, phone }, { timeout: 20000 })
     return data.message
 }
 

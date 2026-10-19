@@ -18,6 +18,7 @@ import payLaterIcon from "../../../sliicons/pay-lator-icon.png"
 import genZIcon from "../../../sliicons/for-zenz-icon.png"
 import payIcon from "../../../sliicons/pay-icon.png"
 import sellPhoneIcon from "../../../sliicons/Sell-phone-icon.jpg"
+import { getHomePromoProducts } from "../utils/homePromoProducts"
 
 const shoppingShortcuts = [
     { label: "Credit Card", icon: creditCardIcon },
@@ -37,11 +38,7 @@ const MainPage = () => {
     }, [dispatch])
 
     const { products = [], loadingProducts, productsLoaded, error } = useSelector(state => state.products)
-    const promoProducts = [
-        { product: products.find(product => /shoes/i.test(product.title?.shortTitle || "")), label: "Run into the weekend", offer: "UP TO 40% OFF" },
-        { product: products.find(product => /earbuds/i.test(product.title?.shortTitle || "")), label: "Sound for every day", offer: "TOP PICKS" },
-        { product: products.find(product => /backpack/i.test(product.title?.shortTitle || "")), label: "Ready for the road", offer: "SHOP NOW" },
-    ].filter(item => item.product)
+    const promoProducts = getHomePromoProducts(products)
     const techDealProducts = products
         .filter(product => ["Top Deals", "Electronics"].includes(product.category))
         .slice(0, 7)
