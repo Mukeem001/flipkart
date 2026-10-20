@@ -88,19 +88,19 @@
   flex: 1;
   width: auto;
   min-width: 0;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid #329bff;
-  border-radius: 24px;
+  border-radius: 14px;
   background: #fff;
 }
 
 .searchbar--compact .searchbar-search {
-  min-height: 42px;
+  min-height: 34px;
   gap: 10px;
 }
 
 .searchbar--compact .searchbar-search input {
-  height: 40px;
+  height: 30px;
   background: #fff;
   font-size: 14px;
 }
@@ -115,6 +115,10 @@
   border: 1px solid #d8d8d8;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(20, 40, 70, 0.14);
+}
+
+.searchbar--compact .searchbar-list:empty {
+  display: none;
 }
 
 @media (max-width: 800px) {
@@ -182,6 +186,11 @@
   .searchbar {
     padding: 0.3rem 0.8rem;
     border-radius: 0.5rem;
+  }
+
+  .searchbar--compact {
+    padding: 0 10px;
+    border-radius: 14px;
   }
 }
 

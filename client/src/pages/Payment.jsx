@@ -5,6 +5,7 @@ import {
     ArrowLeft,
     Banknote,
     CalendarDays,
+    CheckCircle2,
     ChevronDown,
     CircleHelp,
     Clock3,
@@ -16,7 +17,7 @@ import {
     Smile
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { expireUpiPaymentRequest, fetchUpiOptions, SingleOrderApi, startUpiPaymentRequest, toPaymentGateway } from '../service/Api'
+import { expireUpiPaymentRequest, fetchUpiOptions, markUpiPaymentNotCompleted, SingleOrderApi, startUpiPaymentRequest, toPaymentGateway } from '../service/Api'
 import { useAppBack } from '../hooks/useAppBack'
 import './css/Payment.css'
 
@@ -45,7 +46,8 @@ const Payment = () => {
     const [upiOptionsError, setUpiOptionsError] = useState('')
     const [activePaymentRequest, setActivePaymentRequest] = useState(null)
     const [remainingSeconds, setRemainingSeconds] = useState(300)
-    const [finalizingOrder, setFinalizingOrder] = useState(false)
+    const [resolvingPayment, setResolvingPayment] = useState(false)
+    const [showOrderPlaced, setShowOrderPlaced] = useState(false)
     const expiryRequestInFlight = useRef(false)
     const orderId = location.state?.orderId || sessionStorage.getItem('pendingPaymentOrderId')
     const storedAmount = readStoredAmount()
@@ -86,57 +88,73 @@ const Payment = () => {
             if (cancelled) return
             const request = order.upiPaymentRequest
             if (request?.status === 'ACTIVE' && request.expiresAt) {
-                if (new Date(request.expiresAt).getTime() <= Date.now()) {
-                    try {
-                        await expireUpiPaymentRequest(orderId)
-                        if (!cancelled) navigate(`/order-success?orderId=${orderId}`, { replace: true })
-                    } catch (error) {
-                        if (!cancelled) toast.error(error.response?.data?.message || 'Could not finish the payment request')
-                    }
-                    return
-                }
                 setActivePaymentRequest(request)
             } else if (['AWAITING_REVIEW', 'CONFIRMED'].includes(request?.status)) {
                 navigate(`/order-success?orderId=${orderId}`, { replace: true })
             }
-        }).catch(() => {})
+        }).catch(error => {
+            if (!cancelled) toast.error(error.response?.data?.message || 'Could not load the order payment status')
+        })
         return () => { cancelled = true }
     }, [authenticated, navigate, orderId])
 
     useEffect(() => {
         if (!activePaymentRequest?.expiresAt) return undefined
-        let cancelled = false
-        const finalizeOrder = async () => {
-            if (expiryRequestInFlight.current) return
-            expiryRequestInFlight.current = true
-            setFinalizingOrder(true)
-            try {
-                await expireUpiPaymentRequest(orderId)
-                sessionStorage.removeItem('pendingPaymentOrderId')
-                sessionStorage.removeItem('pendingPaymentAmount')
-                if (!cancelled) navigate(`/order-success?orderId=${orderId}`, { replace: true })
-            } catch (error) {
-                expiryRequestInFlight.current = false
-                setFinalizingOrder(false)
-                if (!cancelled) toast.error(error.response?.data?.message || 'Could not place the order yet')
-            }
-        }
         const updateCountdown = () => {
             const seconds = Math.max(0, Math.ceil((new Date(activePaymentRequest.expiresAt).getTime() - Date.now()) / 1000))
             setRemainingSeconds(seconds)
-            if (seconds === 0) finalizeOrder()
         }
         updateCountdown()
         const interval = window.setInterval(updateCountdown, 1000)
         document.addEventListener('visibilitychange', updateCountdown)
         window.addEventListener('pageshow', updateCountdown)
         return () => {
-            cancelled = true
             window.clearInterval(interval)
             document.removeEventListener('visibilitychange', updateCountdown)
             window.removeEventListener('pageshow', updateCountdown)
         }
-    }, [activePaymentRequest?.expiresAt, navigate, orderId])
+    }, [activePaymentRequest?.expiresAt])
+
+    const confirmUpiPayment = async () => {
+        if (expiryRequestInFlight.current) return
+        expiryRequestInFlight.current = true
+        setResolvingPayment(true)
+        try {
+            await expireUpiPaymentRequest(orderId)
+            sessionStorage.removeItem('pendingPaymentOrderId')
+            sessionStorage.removeItem('pendingPaymentAmount')
+            setActivePaymentRequest(null)
+            setShowOrderPlaced(true)
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Could not confirm your payment status')
+        } finally {
+            expiryRequestInFlight.current = false
+            setResolvingPayment(false)
+        }
+    }
+
+    const reportUpiPaymentNotCompleted = async () => {
+        if (expiryRequestInFlight.current) return
+        expiryRequestInFlight.current = true
+        setResolvingPayment(true)
+        try {
+            await markUpiPaymentNotCompleted(orderId)
+            setActivePaymentRequest(null)
+            setSelectedUpi('')
+            setExpandedMethod('upi')
+            toast('Payment was not completed. You can try another UPI app.')
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Could not update the payment status')
+        } finally {
+            expiryRequestInFlight.current = false
+            setResolvingPayment(false)
+        }
+    }
+
+    const goToOrderTracking = () => {
+        window.fbq?.('trackCustom', 'TrackOrderClick', { source: 'upi_payment_confirmation' })
+        navigate(`/order/${orderId}`)
+    }
 
     const continueToGateway = async () => {
         if (!orderId) {
@@ -188,7 +206,6 @@ const Payment = () => {
             setLoadingPayment(true)
             const request = await startUpiPaymentRequest(orderId, requestBody)
             expiryRequestInFlight.current = false
-            setFinalizingOrder(false)
             setSelectedUpi(selectedValue)
             setActivePaymentRequest(request)
             window.setTimeout(() => openUpiApp(request), 350)
@@ -349,14 +366,32 @@ const Payment = () => {
                 <section className="upi-timer-modal" role="dialog" aria-modal="true" aria-labelledby="upi-timer-title">
                     <span className="upi-timer-icon"><Clock3 size={24} /></span>
                     <p className="upi-timer-eyebrow">UPI payment request</p>
-                    <h2 id="upi-timer-title">Complete payment in {activePaymentRequest.label}</h2>
-                    <p className="upi-timer-description">The payment app may open separately. Return here whenever you’re ready; the timer stays attached to your order.</p>
+                    <h2 id="upi-timer-title">{remainingSeconds > 240 ? `Complete payment in ${activePaymentRequest.label}` : 'Did you complete the payment?'}</h2>
+                    <p className="upi-timer-description">{remainingSeconds > 240 ? 'The payment app may open separately. Return here whenever you’re ready; the timer stays attached to your order.' : 'You can confirm your payment status now. The timer will keep running until it ends.'}</p>
                     <strong className="upi-timer-countdown" aria-live="polite">{String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:{String(remainingSeconds % 60).padStart(2, '0')}</strong>
-                    <button className="upi-timer-open-app" type="button" onClick={() => openUpiApp(activePaymentRequest)}>
-                        Open {activePaymentRequest.label} again <ExternalLink size={16} />
-                    </button>
-                    <p className="upi-timer-note">When the timer ends, your order is placed. Payment stays pending until the store verifies it.</p>
-                    {finalizingOrder && <p className="upi-timer-finalizing" role="status">Placing your order…</p>}
+                    {remainingSeconds > 0 && <>
+                        <button className="upi-timer-open-app" type="button" onClick={() => openUpiApp(activePaymentRequest)}>
+                            Open {activePaymentRequest.label} again <ExternalLink size={16} />
+                        </button>
+                    </>}
+                    {remainingSeconds <= 240 && <div className="upi-timer-result-actions">
+                        <button className="upi-payment-done-button" type="button" onClick={confirmUpiPayment} disabled={resolvingPayment}>
+                            {resolvingPayment ? 'Updating order…' : 'Payment done'}
+                        </button>
+                        <button className="upi-payment-not-done-button" type="button" onClick={reportUpiPaymentNotCompleted} disabled={resolvingPayment}>
+                            Payment not done
+                        </button>
+                    </div>}
+                    {remainingSeconds > 240 && <p className="upi-timer-note">Payment options will appear when 4 minutes remain.</p>}
+                </section>
+            </div>}
+            {showOrderPlaced && <div className="upi-timer-overlay upi-order-placed-overlay" role="presentation">
+                <section className="upi-order-placed-modal" role="dialog" aria-modal="true" aria-labelledby="upi-order-placed-title">
+                    <span className="upi-order-placed-icon"><CheckCircle2 size={34} /></span>
+                    <p className="upi-order-placed-eyebrow">Payment confirmation received</p>
+                    <h2 id="upi-order-placed-title">Your order has been placed</h2>
+                    <p>Your payment will be verified by the store. You can track your order for the latest updates.</p>
+                    <button type="button" onClick={goToOrderTracking}>Track your order</button>
                 </section>
             </div>}
         </main>

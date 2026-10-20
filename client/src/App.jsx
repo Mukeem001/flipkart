@@ -1,5 +1,5 @@
 import MainPage from './pages/MainPage'
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 import DetailPage from './pages/DetailPage'
 import Cart from './pages/Cart'
 import OrderSuccess from './pages/OrderSuccess'
@@ -20,6 +20,16 @@ import { fetchMe } from './redux/features/UserSlice'
 import { Toaster } from "react-hot-toast"
 import { AppRouteHistory } from './hooks/useAppBack'
 
+const MetaPixelPageView = () => {
+  const location = useLocation()
+
+  useEffect(() => {
+    window.fbq?.('track', 'PageView')
+  }, [location.pathname, location.search])
+
+  return null
+}
+
 const App = () => {
 
   const dispatch = useDispatch()
@@ -33,6 +43,7 @@ const App = () => {
   return (
     <>
       <BrowserRouter>
+        <MetaPixelPageView />
         <AppRouteHistory />
 
         {loading && <></>}

@@ -55,6 +55,11 @@ export const expireUpiPaymentRequest = async (orderId) => {
     return data
 }
 
+export const markUpiPaymentNotCompleted = async (orderId) => {
+    const { data } = await axiosInstance.post(`/order/${orderId}/upi-payment-not-completed`)
+    return data
+}
+
 //Send OTP
 export const SendOtp = async (identifier) => {
     const payload = typeof identifier === 'string' ? { email: identifier } : identifier

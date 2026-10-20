@@ -593,16 +593,105 @@
   font-weight: 700;
 }
 
-.upi-timer-note,
-.upi-timer-finalizing {
+.upi-timer-note {
   margin: 12px 0 0;
   color: #667085;
   font-size: 11px;
   line-height: 1.45;
 }
 
-.upi-timer-finalizing {
-  color: #185bd7;
+.upi-timer-result-actions {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.upi-payment-done-button,
+.upi-payment-not-done-button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.upi-payment-done-button {
+  background: #16883e;
+  color: #fff;
+}
+
+.upi-payment-not-done-button {
+  border: 1px solid #d4dbe5;
+  background: #fff;
+  color: #344054;
+}
+
+.upi-payment-done-button:disabled,
+.upi-payment-not-done-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.upi-order-placed-overlay {
+  z-index: 1210;
+}
+
+.upi-order-placed-modal {
+  display: grid;
+  justify-items: center;
+  width: min(100%, 420px);
+  padding: 30px 24px 24px;
+  border: 1px solid #b8e4c5;
+  border-radius: 14px;
+  background: #eaf7ee;
+  box-shadow: 0 20px 56px rgba(8, 24, 48, 0.22);
+  text-align: center;
+}
+
+.upi-order-placed-icon {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  border-radius: 50%;
+  background: #16883e;
+  color: #fff;
+}
+
+.upi-order-placed-eyebrow {
+  margin: 16px 0 5px;
+  color: #16883e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.upi-order-placed-modal h2 {
+  margin: 0;
+  color: #143a22;
+  font-size: 21px;
+  line-height: 1.35;
+}
+
+.upi-order-placed-modal p:not(.upi-order-placed-eyebrow) {
+  margin: 9px 0 18px;
+  color: #42634c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.upi-order-placed-modal button {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: #16883e;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
   font-weight: 700;
 }
 

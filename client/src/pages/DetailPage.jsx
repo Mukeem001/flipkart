@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import "./css/detailPage.css"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchProductDetail, fetchProducts } from '../redux/features/ProductSlice'
 import Search from '../components/Header/Search'
@@ -8,13 +8,21 @@ import { addToCart } from '../redux/features/CartSlice'
 import { useDataContextProvider } from '../context/DataProvider'
 import { useAppBack } from '../hooks/useAppBack'
 import { getProductGalleryImages, getProductVariantOptions } from '../utils/productVariants'
-import { useState } from 'react'
 import toast from "react-hot-toast"
 import { ArrowRight, Banknote, ChevronDown, ChevronRight, ChevronUp, CircleCheck, MapPin, PackageCheck, ShieldCheck, Store, ThumbsDown, ThumbsUp, Truck, X } from 'lucide-react'
+
+const SHOW_SALE_COUNTDOWN = false
+
+const getSaleAdProducts = (products, currentProductId) => {
+    const otherProducts = (products || []).filter(item => item._id !== currentProductId)
+    return (otherProducts.length ? otherProducts : products || []).slice(0, 8)
+}
 
 const DetailPage = () => {
 
     const [showVariantSheet, setShowVariantSheet] = useState(false);
+    const [saleRemainingSeconds, setSaleRemainingSeconds] = useState(2 * 60 * 60);
+    const [activeSaleAdIndex, setActiveSaleAdIndex] = useState(0);
     const [pendingCheckout, setPendingCheckout] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState(2);
     const [selectedSize, setSelectedSize] = useState('');
@@ -30,6 +38,17 @@ const DetailPage = () => {
     const touchStartXRef = useRef(null);
     const productListRequestedRef = useRef(false);
 
+    useEffect(() => {
+        if (!SHOW_SALE_COUNTDOWN) return undefined
+
+        const saleStartsAt = Date.now() + 2 * 60 * 60 * 1000
+        const timer = window.setInterval(() => {
+            setSaleRemainingSeconds(Math.max(Math.ceil((saleStartsAt - Date.now()) / 1000), 0))
+        }, 1000)
+
+        return () => window.clearInterval(timer)
+    }, [])
+
     const navigate = useNavigate()
     const goBack = useAppBack('/')
     const dispatch = useDispatch()
@@ -39,6 +58,20 @@ const DetailPage = () => {
     const { id } = useParams();
     const { product, loadingProduct, products, productsLoaded, loadingProducts } = useSelector(state => state.products)
     const { authenticated } = useSelector(state => state.user)
+
+    useEffect(() => {
+        const adCount = getSaleAdProducts(products, id).length
+        if (adCount < 2) {
+            setActiveSaleAdIndex(0)
+            return undefined
+        }
+
+        const timer = window.setInterval(() => {
+            setActiveSaleAdIndex(index => (index + 1) % adCount)
+        }, 3000)
+
+        return () => window.clearInterval(timer)
+    }, [id, products])
 
     useEffect(() => {
         const updateTopbarState = () => {
@@ -167,6 +200,11 @@ const DetailPage = () => {
         .filter(item => item._id !== product._id && item.category === product.category)
         .concat((products || []).filter(item => item._id !== product._id && item.category !== product.category))
         .slice(0, 8)
+    const saleAdProducts = getSaleAdProducts(products, product._id)
+    const activeSaleAd = saleAdProducts[activeSaleAdIndex % Math.max(saleAdProducts.length, 1)] || product
+    const saleAdCost = Number(activeSaleAd.price?.cost) || 0
+    const saleAdMrp = Number(activeSaleAd.price?.mrp) || saleAdCost
+    const saleAdDiscount = String(activeSaleAd.price?.discount || '').match(/[0-9]+%/)?.[0]
     const deliveryDate = new Date()
     deliveryDate.setDate(deliveryDate.getDate() + 5)
     const deliveryDateText = deliveryDate.toLocaleDateString('en-IN', {
@@ -174,6 +212,9 @@ const DetailPage = () => {
         month: 'short',
         weekday: 'short',
     })
+    const saleHours = String(Math.floor(saleRemainingSeconds / 3600)).padStart(2, '0')
+    const saleMinutes = String(Math.floor((saleRemainingSeconds % 3600) / 60)).padStart(2, '0')
+    const saleSeconds = String(saleRemainingSeconds % 60).padStart(2, '0')
 
     const scrollSimilarProducts = () => {
         similarProductsRef.current?.scrollBy({ left: 220, behavior: 'smooth' })
@@ -223,19 +264,41 @@ const DetailPage = () => {
                         </button>
                     </div>
 
-                    <div className="sale-banner">
-                        <span className="sale-label">Sale starts in</span>
-                        <div className="sale-pills">
-                            <span className="sale-pill">43</span>
-                            <span>Hrs</span>
-                            <span className="sale-separator">:</span>
-                            <span className="sale-pill">00</span>
-                            <span>Min</span>
-                            <span className="sale-separator">:</span>
-                            <span className="sale-pill">13</span>
-                            <span>Sec</span>
+                    {SHOW_SALE_COUNTDOWN ? (
+                        <div className="sale-banner">
+                            <span className="sale-label">{saleRemainingSeconds > 0 ? 'Sale starts in' : 'Sale is live'}</span>
+                            <div className="sale-pills" aria-label={`${saleHours} hours ${saleMinutes} minutes ${saleSeconds} seconds`}>
+                                <span className="sale-pill">{saleHours}</span>
+                                <span>Hrs</span>
+                                <span className="sale-separator">:</span>
+                                <span className="sale-pill">{saleMinutes}</span>
+                                <span>Min</span>
+                                <span className="sale-separator">:</span>
+                                <span className="sale-pill">{saleSeconds}</span>
+                                <span>Sec</span>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="detail-sale-ad-viewport">
+                            <Link
+                                key={activeSaleAd._id}
+                                className="detail-sale-ad"
+                                to={`/product/${activeSaleAd._id}`}
+                                aria-label={`${activeSaleAd.title?.shortTitle || 'Product'}, ${saleAdDiscount || 'Special offer'}, ₹${saleAdCost.toLocaleString('en-IN')}`}
+                            >
+                                <img className="detail-sale-ad-image" src={activeSaleAd.detailUrl} alt="" />
+                                <span className="detail-sale-ad-info">
+                                    <span className="detail-sale-ad-title">{activeSaleAd.title?.shortTitle || activeSaleAd.title?.longTitle || 'Product'}</span>
+                                    <span className="detail-sale-ad-prices">
+                                        {saleAdDiscount && <strong className="detail-sale-ad-discount">↓{saleAdDiscount}</strong>}
+                                        {saleAdMrp > saleAdCost && <del>₹{saleAdMrp.toLocaleString('en-IN')}</del>}
+                                        <strong className="detail-sale-ad-cost">₹{saleAdCost.toLocaleString('en-IN')}</strong>
+                                    </span>
+                                </span>
+                                <span className="detail-sale-ad-label">AD</span>
+                            </Link>
+                        </div>
+                    )}
 
                     <div
                         className="detail-image-stage"

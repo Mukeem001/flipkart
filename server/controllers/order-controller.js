@@ -4,22 +4,6 @@ const PaymentSettings = require("../models/paymentSettings")
 const wrapAsync = require("../utils/wrapAsync")
 const UPI_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{0,99}@[a-z0-9][a-z0-9.-]{0,29}$/i
 
-const finalizeExpiredUpiRequests = async (filter = {}) => {
-    const now = new Date()
-    await Order.updateMany({
-        ...filter,
-        status: "PAYMENT_REQUESTED",
-        "upiPaymentRequest.status": "ACTIVE",
-        "upiPaymentRequest.expiresAt": { $lte: now }
-    }, {
-        $set: {
-            status: "PLACED",
-            "upiPaymentRequest.status": "AWAITING_REVIEW",
-            "upiPaymentRequest.placedAt": now
-        }
-    })
-}
-
 //Place New Order
 module.exports.order = wrapAsync(async (req, res) => {
     const { cartItems, totalPrice, addressId } = req.body
@@ -37,6 +21,10 @@ module.exports.order = wrapAsync(async (req, res) => {
     if (!deliveryAddress) {
         return res.status(400).json({ success: false, message: "Please add and select a delivery address before placing your order." })
     }
+    const mobile = deliveryAddress.phone?.trim() || user.phone?.trim()
+    if (!mobile) {
+        return res.status(400).json({ success: false, message: "A mobile number is required for the delivery address." })
+    }
     if (String(user.selectedAddressId) !== String(deliveryAddress._id)) {
         user.selectedAddressId = deliveryAddress._id
         await user.save()
@@ -52,7 +40,7 @@ module.exports.order = wrapAsync(async (req, res) => {
     const userDetail = {
         name: user.name,
         email: user.email,
-        mobile: user.phone,
+        mobile,
         address: {
             fullName: deliveryAddress.fullName,
             phone: deliveryAddress.phone,
@@ -81,7 +69,6 @@ module.exports.order = wrapAsync(async (req, res) => {
 
 // Get all orders
 module.exports.Allorders = wrapAsync(async (req, res) => {
-    await finalizeExpiredUpiRequests()
     const { page, limit, search } = req.query;
     const currentPage = Number(page);
     const pageLimit = Number(limit);
@@ -121,7 +108,6 @@ module.exports.Allorders = wrapAsync(async (req, res) => {
 // Get customer Orders
 module.exports.CustomerOrders = wrapAsync(async (req, res) => {
     const id = req.user._id;
-    await finalizeExpiredUpiRequests({ userId: id })
     const orders = await Order.find({ userId: id })
     res.status(200).json({ success: true, orders })
 })
@@ -129,7 +115,6 @@ module.exports.CustomerOrders = wrapAsync(async (req, res) => {
 // Single Order
 module.exports.SingleOrder = wrapAsync(async (req, res) => {
     const { id } = req.params
-    await finalizeExpiredUpiRequests({ _id: id, userId: req.user._id })
     const order = await Order.findOne({ _id: id, userId: req.user._id })
     if (!order) {
         return res.status(404).json({ success: false, message: "order not found" })
@@ -153,8 +138,7 @@ module.exports.startUpiPaymentRequest = wrapAsync(async (req, res) => {
         if (existingRequest.expiresAt > new Date()) {
             return res.status(200).json({ success: true, paymentRequest: existingRequest })
         }
-        await finalizeExpiredUpiRequests({ _id: order._id, userId: req.user._id })
-        return res.status(409).json({ success: false, message: "The payment timer ended. Your order is placed and waiting for store verification." })
+        return res.status(409).json({ success: false, message: "The payment timer ended. Confirm whether the payment was completed before starting another request." })
     }
     if (existingRequest?.status === "AWAITING_REVIEW") {
         return res.status(409).json({ success: false, message: "Payment request is already with the store for review." })
@@ -203,16 +187,45 @@ module.exports.expireUpiPaymentRequest = wrapAsync(async (req, res) => {
     if (!paymentRequest?.expiresAt) {
         return res.status(400).json({ success: false, message: "No UPI payment request exists for this order." })
     }
-    if (paymentRequest.status === "ACTIVE" && paymentRequest.expiresAt > new Date()) {
-        return res.status(409).json({ success: false, message: "The payment timer has not finished yet.", expiresAt: paymentRequest.expiresAt })
-    }
-
     if (paymentRequest.status === "ACTIVE") {
         paymentRequest.status = "AWAITING_REVIEW"
         paymentRequest.placedAt = new Date()
         if (!["DELIVERED", "REJECTED", "PAYMENT_FAILED"].includes(order.status)) order.status = "PLACED"
         await order.save()
     }
+
+    return res.status(200).json({
+        success: true,
+        orderId: order._id,
+        orderStatus: order.status,
+        paymentStatus: order.paymentDetails.status,
+        paymentRequestStatus: paymentRequest.status
+    })
+})
+
+module.exports.markUpiPaymentNotCompleted = wrapAsync(async (req, res) => {
+    const order = await Order.findOne({ _id: req.params.id, userId: req.user._id })
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found." })
+    }
+
+    const paymentRequest = order.upiPaymentRequest
+    if (!paymentRequest?.expiresAt) {
+        return res.status(400).json({ success: false, message: "No UPI payment request exists for this order." })
+    }
+    if (paymentRequest.status === "AWAITING_REVIEW" || paymentRequest.status === "CONFIRMED") {
+        return res.status(409).json({ success: false, message: "This payment has already been submitted for verification." })
+    }
+    if (paymentRequest.status === "FAILED") {
+        return res.status(200).json({ success: true, orderId: order._id, paymentRequestStatus: paymentRequest.status })
+    }
+    if (paymentRequest.status !== "ACTIVE") {
+        return res.status(409).json({ success: false, message: "This UPI payment request is no longer active." })
+    }
+    paymentRequest.status = "FAILED"
+    order.paymentDetails.status = "FAILED"
+    order.status = "PAYMENT_FAILED"
+    await order.save()
 
     return res.status(200).json({
         success: true,
