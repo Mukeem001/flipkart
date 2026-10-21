@@ -1,0 +1,570 @@
+.desktop-brandbar,
+.desktop-home,
+.desktop-home-footer {
+    display: none;
+}
+
+@media (min-width: 801px) {
+    .main-page {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background: #fff;
+    }
+
+    .main-page > .mobile-sticky-search,
+    .mobile-home-content {
+        display: none;
+    }
+
+    .desktop-home-footer {
+        display: block;
+    }
+
+    .desktop-brandbar {
+        display: block;
+        height: 52px;
+        background: #fff;
+        font-family: Arial, sans-serif;
+    }
+
+    .desktop-brandbar-inner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: min(1160px, calc(100% - 24px));
+        height: 100%;
+        margin: 0 auto;
+    }
+
+    .desktop-brand-choice {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        width: 112px;
+        height: 36px;
+        padding: 4px 10px;
+        border-radius: 11px;
+        background: #f1f2f4;
+        color: #30343b;
+        text-decoration: none;
+    }
+
+    .desktop-brand-choice-active {
+        background: #ffe21c;
+    }
+
+    .desktop-brand-choice img:first-child {
+        width: 23px;
+        height: 23px;
+        object-fit: contain;
+    }
+
+    .desktop-brand-choice img:last-child {
+        width: 52px;
+        height: 19px;
+        object-fit: contain;
+    }
+
+    .desktop-grocery-choice {
+        gap: 4px;
+        width: 122px;
+    }
+
+    .desktop-grocery-choice img {
+        width: 35px !important;
+        height: 23px !important;
+    }
+
+    .desktop-grocery-choice strong {
+        font-size: 12px;
+    }
+
+    .desktop-location-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        max-width: 330px;
+        margin-left: auto;
+        padding: 6px 0;
+        overflow: hidden;
+        border: 0;
+        background: transparent;
+        color: #252932;
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .desktop-location-button strong {
+        color: #145de0;
+        font-weight: 600;
+    }
+
+    .main-page > .header {
+        box-sizing: border-box;
+        width: min(1160px, calc(100% - 24px));
+        height: 52px;
+        margin: 0 auto;
+        padding: 6px 14px;
+        gap: 24px;
+        border-bottom: 1px solid #d8dce2;
+        background: #fff;
+    }
+
+    .main-page > .header > a:first-of-type {
+        display: none;
+    }
+
+    .main-page > .header .searchbar {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: 724px;
+        padding: 3px 11px;
+        border: 2px solid #287cff;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .main-page > .header .searchbar-search {
+        gap: 8px;
+    }
+
+    .main-page > .header .searchbar-search .search-icon {
+        display: grid;
+        color: #898d93;
+    }
+
+    .main-page > .header .searchbar-search input {
+        height: 29px;
+        background: #fff;
+        font-size: 14px;
+    }
+
+    .main-page > .header .login.header-icons {
+        display: flex;
+    }
+
+    .main-page > .header .header-icons {
+        gap: 7px;
+        flex: 0 0 auto;
+        font-size: 12px;
+    }
+
+    .main-page > .header .header-icons p {
+        margin: 0;
+    }
+
+    .main-page > .header .header-icons img {
+        width: 18px;
+        height: 18px;
+    }
+
+    .main-page > .header .become-a-seller,
+    .main-page > .header .more-options img {
+        display: none;
+    }
+
+    .main-page > .header .more-options {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        color: #252932;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .main-page > .header .more-options::before {
+        content: "More";
+    }
+
+    .main-page > .header .more-options::after {
+        content: "⌄";
+        font-size: 14px;
+    }
+
+    .desktop-home {
+        display: block;
+        width: min(1160px, calc(100% - 24px));
+        margin: 0 auto;
+        padding: 0 0 28px;
+        color: #202124;
+        font-family: Arial, sans-serif;
+    }
+
+    .desktop-category-nav {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+        height: 68px;
+        margin-bottom: 15px;
+        overflow: hidden;
+        border-bottom: 1px solid #d8dce2;
+    }
+
+    .desktop-category-nav a {
+        position: relative;
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-width: 0;
+        padding: 4px 2px 7px;
+        color: #272a30;
+        font-size: 11px;
+        text-decoration: none;
+    }
+
+    .desktop-category-nav a img {
+        display: block;
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+
+    .desktop-category-nav a span {
+        width: 100%;
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .desktop-category-nav a.active {
+        color: #101318;
+        font-weight: 700;
+    }
+
+    .desktop-category-nav a.active::after {
+        position: absolute;
+        right: 8px;
+        bottom: 0;
+        left: 8px;
+        height: 3px;
+        border-radius: 3px 3px 0 0;
+        background: #2874f0;
+        content: "";
+    }
+
+    .desktop-banner-section {
+        margin: 0 -1px 20px;
+    }
+
+    .desktop-banner-viewport {
+        overflow: hidden;
+        padding: 0 14px 3px;
+    }
+
+    .desktop-banner-rail {
+        display: flex;
+        width: max-content;
+        gap: 28px;
+    }
+
+    .desktop-banner-rail.is-transitioning {
+        transition: transform 1.4s ease-in-out;
+    }
+
+    .desktop-personalized-rail::-webkit-scrollbar {
+        display: none;
+    }
+
+    .desktop-banner-card {
+        position: relative;
+        display: block;
+        flex: 0 0 clamp(320px, 34.48vw, 400px);
+        height: 195px;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #f2f2f2;
+        text-decoration: none;
+    }
+
+    .desktop-banner-card img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .desktop-ad-pill {
+        position: absolute;
+        right: 9px;
+        bottom: 9px;
+        padding: 3px 7px;
+        border-radius: 4px;
+        background: rgba(30, 30, 30, 0.65);
+        color: white;
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    .desktop-personalized-section {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 18px;
+        padding: 14px 11px 11px;
+        border-radius: 15px;
+        background: #731bff;
+        color: #fff;
+    }
+
+    .desktop-personalized-heading h1 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .desktop-personalized-rail {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        scroll-behavior: smooth;
+    }
+
+    .desktop-product-card {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 3px;
+        padding: 4px;
+        border: 2px solid #ededed;
+        border-radius: 11px;
+        background: #fff;
+        color: #252525;
+        text-decoration: none;
+    }
+
+    .desktop-product-card-compact {
+        flex: 0 0 184px;
+        padding: 4px;
+        border: 2px solid #e9e9e9;
+    }
+
+    .desktop-product-image {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        aspect-ratio: 1 / 1;
+        border-radius: 8px;
+        background: #f1f1f1;
+    }
+
+    .desktop-product-image img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .desktop-product-name {
+        overflow: hidden;
+        color: #6d6d6d;
+        font-size: 12px;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .desktop-product-offer {
+        overflow: hidden;
+        color: #252525;
+        font-size: 12px;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .desktop-personalized-arrow {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        display: grid;
+        width: 42px;
+        height: 42px;
+        transform: translateY(4px);
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
+        color: #555;
+        cursor: pointer;
+    }
+
+    .desktop-deal-section {
+        overflow: hidden;
+        margin: 0 0 18px;
+        padding: 6px;
+        border-radius: 10px;
+        background-color: #ff7411;
+        background-image: radial-gradient(circle at 10px 7px, #ffe99b 0 3px, transparent 4px), linear-gradient(120deg, #ffad00, #ff4b1b);
+        background-size: 25px 18px, auto;
+    }
+
+    .desktop-deal-pink {
+        background-color: #bd0065;
+        background-image: radial-gradient(circle at 10px 7px, #ffe99b 0 3px, transparent 4px), linear-gradient(120deg, #ff3485, #bd0065);
+    }
+
+    .desktop-deal-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 22px;
+        padding: 0 5px 5px;
+        color: #fff;
+    }
+
+    .desktop-deal-title-row h2 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .desktop-deal-title-row > a {
+        display: grid;
+        width: 25px;
+        height: 25px;
+        place-items: center;
+        border-radius: 50%;
+        background: #fff;
+        color: #272727;
+        text-decoration: none;
+    }
+
+    .desktop-deal-cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 5px;
+        padding: 5px;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .desktop-deal-cards .desktop-product-card {
+        padding: 3px;
+        border: 0;
+        border-radius: 6px;
+    }
+
+    .desktop-deal-cards .desktop-product-image {
+        aspect-ratio: 1.45 / 1;
+        border-radius: 4px;
+    }
+
+    .desktop-deal-cards .desktop-product-name,
+    .desktop-deal-cards .desktop-product-offer {
+        font-size: 10px;
+    }
+
+    .desktop-spotlight {
+        margin-bottom: 18px;
+    }
+
+    .desktop-section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 10px;
+    }
+
+    .desktop-section-heading h2 {
+        margin: 0;
+        color: #222;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .desktop-section-heading > a {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 50%;
+        background: #2874f0;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .desktop-spotlight-track {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .desktop-spotlight-track .desktop-product-card {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .desktop-spotlight-track .desktop-product-image {
+        aspect-ratio: 1.5 / 1;
+        border-radius: 9px;
+    }
+}
+
+@media (min-width: 801px) and (max-width: 1100px) {
+    .desktop-brandbar-inner,
+    .main-page > .header,
+    .desktop-home {
+        width: calc(100% - 24px);
+    }
+
+    .desktop-brandbar-inner {
+        gap: 8px;
+    }
+
+    .desktop-brand-choice {
+        width: 90px;
+    }
+
+    .desktop-grocery-choice {
+        width: 100px;
+    }
+
+    .desktop-location-button {
+        max-width: 240px;
+    }
+
+    .desktop-category-nav a {
+        font-size: 10px;
+    }
+
+    .desktop-banner-rail {
+        gap: 20px;
+    }
+
+    .desktop-banner-card {
+        flex-basis: clamp(300px, 38vw, 400px);
+        height: 190px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) and (min-width: 801px) {
+    .desktop-banner-rail.is-transitioning {
+        transition-duration: 0.01ms;
+    }
+}
+
+@media (max-width: 800px) {
+    .desktop-brandbar,
+    .desktop-home,
+    .desktop-home-footer {
+        display: none;
+    }
+
+    .mobile-home-content {
+        display: block;
+    }
+
+    .mobile-home-content > .footer {
+        display: none;
+    }
+}

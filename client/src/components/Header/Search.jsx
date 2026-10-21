@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { Link, useNavigate } from "react-router-dom"
 import { fetchProducts } from '../../redux/features/ProductSlice'
 
-const Search = ({ compact = false }) => {
+const Search = ({ compact = false, placeholder = "Search products" }) => {
 
     const [text, setText] = useState("")
     const dispatch = useDispatch();
@@ -64,7 +64,7 @@ const Search = ({ compact = false }) => {
                         type="text"
                         onChange={changed}
                         value={text}
-                        placeholder="Search products"
+                        placeholder={placeholder}
                         aria-label="Search products"
                     />
                 </form>

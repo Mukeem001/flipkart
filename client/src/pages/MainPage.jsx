@@ -19,6 +19,7 @@ import genZIcon from "../../../sliicons/for-zenz-icon.png"
 import payIcon from "../../../sliicons/pay-icon.png"
 import sellPhoneIcon from "../../../sliicons/Sell-phone-icon.jpg"
 import { getHomePromoProducts } from "../utils/homePromoProducts"
+import DesktopHome, { DesktopBrandBar } from "../components/MainPage/DesktopHome/DesktopHome"
 
 const shoppingShortcuts = [
     { label: "Credit Card", icon: creditCardIcon },
@@ -42,9 +43,10 @@ const MainPage = () => {
     const techDealProducts = products
         .filter(product => ["Top Deals", "Electronics"].includes(product.category))
         .slice(0, 7)
-    const fashionDealProducts = products
-        .filter(product => product.category === "Fashion Deals")
-        .slice(0, 4)
+    const fashionDealProducts = [
+        ...products.filter(product => String(product.category || "").trim().toLowerCase() === "fashion deals"),
+        ...products.filter(product => String(product.category || "").trim().toLowerCase() === "fashion"),
+    ].slice(0, 4)
 
     if (!productsLoaded || (loadingProducts && products.length === 0)) return (
         <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
@@ -67,8 +69,15 @@ const MainPage = () => {
 
     return (
         <div className="main-page">
+            <DesktopBrandBar />
             <Header />
-            <div className="main-page-container">
+            <DesktopHome
+                products={products}
+                techDealProducts={techDealProducts}
+                fashionDealProducts={fashionDealProducts}
+            />
+            <div className="mobile-home-content">
+                <div className="main-page-container">
                 <Navbar />
                 <Carousel />
                 <div className="mobile-promo-grid">
@@ -159,8 +168,10 @@ const MainPage = () => {
                     </div>
                 </section>
                 <TopStories />
+                </div>
+                <Footer />
             </div>
-            <Footer />
+            <div className="desktop-home-footer"><Footer /></div>
         </div>
     )
 }

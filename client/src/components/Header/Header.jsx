@@ -137,7 +137,7 @@ const Header = () => {
                         <img src="https://images.seeklogo.com/logo-png/62/2/flipkart-logo-png_seeklogo-622636.png" title="Flipkart"></img>
                     </div>
                 </Link>
-                <Search />
+                <Search placeholder="Search for Products, Brands and More" />
                 {user
                     ?
                     <div className="login header-icons">
