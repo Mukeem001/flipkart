@@ -236,6 +236,11 @@ const DetailPage = () => {
         setLoginForm(true)
     }
 
+    const handleBuyNow = () => {
+        window.fbq?.('trackCustom', 'checkoutButtonClick')
+        setShowVariantSheet(true)
+    }
+
     const showPreviousImage = () => setSelectedImageIndex(index => (index - 1 + galleryImageUrls.length) % galleryImageUrls.length)
     const showNextImage = () => setSelectedImageIndex(index => (index + 1) % galleryImageUrls.length)
     const handleGalleryTouchStart = event => {
@@ -583,7 +588,7 @@ const DetailPage = () => {
                                 </button>
                             )}
 
-                            <button className="buy-now-option" type="button" onClick={() => setShowVariantSheet(true)}>
+                            <button className="buy-now-option" type="button" onClick={handleBuyNow}>
                                 <span>Buy now</span>
                                 <small>at ₹{productCost.toLocaleString('en-IN')}</small>
                             </button>
