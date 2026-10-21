@@ -1,7 +1,7 @@
 const express = require("express")
 const router = express.Router();
 
-const { allProducts, product, AddProduct, UpdateProduct, DeleteProduct, ProdcutReview, EditReview, DeleteReview } = require("../controllers/Product-controllers");
+const { allProducts, product, AddProduct, UpdateProduct, UpdateProductPrice, DeleteProduct, ProdcutReview, EditReview, DeleteReview } = require("../controllers/Product-controllers");
 const auth = require("../middlewares/auth");
 const adminAuth = require("../middlewares/adminAuth");
 const upload  = require("../middlewares/multer");
@@ -19,6 +19,7 @@ router.delete("/deleteproduct/:id", DeleteProduct)
 //Add Product
 router.post("/addproduct", adminAuth, upload.single("image"), AddProduct)
 router.put("/admin/products/:id", adminAuth, upload.single("image"), UpdateProduct)
+router.patch("/admin/products/:id/price", adminAuth, UpdateProductPrice)
 
 //Add Product Review
 router.post("/review/:id",auth, ProdcutReview)

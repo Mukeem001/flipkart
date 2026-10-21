@@ -2,6 +2,7 @@ const Product = require("../models/product");
 const User = require("../models/user");
 const wrapAsync = require("../utils/wrapAsync");
 const cloudinary = require("../config/cloudinary")
+const { isValidProductCost } = require("../service/productPrice")
 
 module.exports.allProducts = wrapAsync(async (req, res) => {
 
@@ -226,6 +227,24 @@ module.exports.UpdateProduct = wrapAsync(async (req, res) => {
     Object.assign(product, productInput)
     await product.save()
     res.status(200).json({ success: true, message: "Product updated.", product })
+})
+
+module.exports.UpdateProductPrice = wrapAsync(async (req, res) => {
+    const { cost } = req.body || {}
+    if (!isValidProductCost(cost)) {
+        return res.status(400).json({ success: false, message: "Enter a valid price greater than zero." })
+    }
+
+    const product = await Product.findByIdAndUpdate(
+        req.params.id,
+        { $set: { "price.cost": cost } },
+        { new: true, runValidators: true }
+    )
+    if (!product) {
+        return res.status(404).json({ success: false, message: "Product not found." })
+    }
+
+    return res.status(200).json({ success: true, message: "Product price updated.", product })
 })
 
 //Add Product Review

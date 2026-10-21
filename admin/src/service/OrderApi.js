@@ -44,6 +44,13 @@ export const UpdateProduct = async (id, formData) => {
     return res.data.product
 }
 
+export const UpdateProductPrice = async (id, cost) => {
+    const res = await axios.patch(`${URL}/admin/products/${id}/price`, { cost }, {
+        headers: getAuthHeaders()
+    })
+    return res.data.product
+}
+
 //For All Products
 export const AllProducts = async (queryString) => {
     const res = await axios.get(`${URL}/allproducts?${queryString}`)

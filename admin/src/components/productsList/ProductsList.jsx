@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useProductContext } from "../../context/ProductContext";
-import { DeleteProduct, UpdateOrderPaymentStatus, UpdateOrderStatus } from "../../service/OrderApi";
+import { DeleteProduct, UpdateOrderPaymentStatus, UpdateOrderStatus, UpdateProductPrice } from "../../service/OrderApi";
 import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import "./ProductList.css"
@@ -18,6 +18,9 @@ const ProductsList = ({ orderColumns, products, orders, totalPages = 1, totalPro
     const [paymentRequestStatusMap, setPaymentRequestStatusMap] = useState({});
     const [actionError, setActionError] = useState('')
     const [actionMessage, setActionMessage] = useState('')
+    const [editingPriceId, setEditingPriceId] = useState(null)
+    const [priceDraft, setPriceDraft] = useState('')
+    const [priceSavingId, setPriceSavingId] = useState(null)
     const productMode = Array.isArray(products)
 
     useEffect(() => {
@@ -36,6 +39,29 @@ const ProductsList = ({ orderColumns, products, orders, totalPages = 1, totalPro
             setActionError(error.response?.data?.message || 'Could not delete product.')
         } finally {
             setLoadingId(null)
+        }
+    }
+
+    const saveProductPrice = async (event, productId) => {
+        event.preventDefault()
+        const cost = Number(priceDraft)
+        if (!Number.isFinite(cost) || cost <= 0) {
+            setActionError('Enter a valid price greater than zero.')
+            return
+        }
+
+        setPriceSavingId(productId)
+        setActionError('')
+        setActionMessage('')
+        try {
+            const updatedProduct = await UpdateProductPrice(productId, cost)
+            setProducts(current => current.map(product => product._id === productId ? updatedProduct : product))
+            setEditingPriceId(null)
+            setActionMessage('Product price updated.')
+        } catch (error) {
+            setActionError(error.response?.data?.message || 'Could not update product price.')
+        } finally {
+            setPriceSavingId(null)
         }
     }
 
@@ -130,7 +156,36 @@ const ProductsList = ({ orderColumns, products, orders, totalPages = 1, totalPro
                                         <td className="px-4 py-3.5 text-slate-400">{(page - 1) * limit + index + 1}</td>
                                         <td className="max-w-[290px] px-4 py-3.5"><div className="flex items-center gap-3"><img className="h-10 w-10 shrink-0 rounded-lg border border-slate-100 bg-slate-50 object-contain" src={product.detailUrl} alt="" /><span className="truncate font-semibold text-slate-800">{product.title?.shortTitle || 'Untitled product'}</span></div></td>
                                         <td className="px-4 py-3.5">{product.category || '—'}</td>
-                                        <td className="px-4 py-3.5 font-semibold text-slate-800">₹{Number(product.price?.cost || 0).toLocaleString('en-IN')}</td>
+                                        <td className="px-4 py-3.5">
+                                            {editingPriceId === product._id ? <form className="flex items-center gap-1.5" onSubmit={event => saveProductPrice(event, product._id)}>
+                                                <label className="sr-only" htmlFor={`price-${product._id}`}>Price for {product.title?.shortTitle || 'product'}</label>
+                                                <input
+                                                    id={`price-${product._id}`}
+                                                    className="w-24 rounded-md border border-slate-300 px-2 py-1.5 font-semibold text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                                    type="number"
+                                                    min="0.01"
+                                                    step="0.01"
+                                                    value={priceDraft}
+                                                    onChange={event => setPriceDraft(event.target.value)}
+                                                    onKeyDown={event => {
+                                                        if (event.key === 'Escape') setEditingPriceId(null)
+                                                    }}
+                                                    autoFocus
+                                                />
+                                                <button type="submit" className="rounded-md bg-blue-700 px-2 py-1.5 text-[10px] font-semibold text-white hover:bg-blue-800 disabled:opacity-50" disabled={priceSavingId === product._id} aria-label="Save price">Save</button>
+                                                <button type="button" className="rounded-md border border-slate-200 px-2 py-1.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50" onClick={() => setEditingPriceId(null)} disabled={priceSavingId === product._id}>Cancel</button>
+                                            </form> : <button
+                                                type="button"
+                                                className="rounded px-1 py-1 text-left font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                onClick={() => {
+                                                    setEditingPriceId(product._id)
+                                                    setPriceDraft(String(product.price?.cost ?? ''))
+                                                    setActionError('')
+                                                }}
+                                                title="Click to edit price"
+                                                aria-label={`Edit price for ${product.title?.shortTitle || 'product'}`}
+                                            >₹{Number(product.price?.cost || 0).toLocaleString('en-IN')}</button>}
+                                        </td>
                                         <td className="px-4 py-3.5">{product.quantity ?? 0}</td>
                                         <td className="px-4 py-3.5"><div className="flex items-center gap-2">
                                             <Link to={`/edit-products/${product._id}`} className="grid h-8 w-8 place-items-center rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50" title="Edit product" aria-label={`Edit ${product.title?.shortTitle || 'product'}`}>
