@@ -22,6 +22,7 @@ const corsSettingsRouter = require("./routes/corsSettingsRoute")
 const { getConfiguredCorsOrigins, loadCorsOrigins } = require("./service/corsSettings")
 const User = require("./models/user")
 const { ensureUserIndexes } = require("./service/userIndexes")
+const { startKeepAlive } = require("./service/keepAlive")
 
 const DEMO_USER = {
     name: "Demo User",
@@ -144,6 +145,7 @@ const startServer = async () => {
 
     app.listen(PORT, HOST, () => {
         console.log(`connected to ${HOST}:${PORT}`)
+        startKeepAlive()
     })
 }
 
